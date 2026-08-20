@@ -1,0 +1,13 @@
+# A CLI deploy uploads this directory as-is, so anything secret or local must
+# be named here. Git-based deploys never see these files (.gitignore covers
+# them), but `vercel deploy` does not read .gitignore.
+.env
+.env.*
+!.env.example
+
+backups/
+.next/
+node_modules/
+.git/
+docs/
+scripts/
