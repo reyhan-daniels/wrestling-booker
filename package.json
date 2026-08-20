@@ -13,7 +13,9 @@
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
     "backup": "bash scripts/backup.sh",
-    "seed:real": "tsx scripts/seed-real-roster.ts"
+    "seed:real": "tsx scripts/seed-real-roster.ts",
+    "world:export": "tsx scripts/world-export.ts export",
+    "world:import": "tsx scripts/world-export.ts import"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
