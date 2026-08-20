@@ -16,7 +16,7 @@ export default async function TitlesPage() {
       include: { company: { select: { id: true, name: true } }, _count: { select: { reigns: true } } },
       orderBy: [{ company: { name: "asc" } }, { isActive: "desc" }, { name: "asc" }],
     }),
-    getCurrentChampions(),
+    getCurrentChampions(undefined, world.id),
   ]);
 
   return (
@@ -30,20 +30,22 @@ export default async function TitlesPage() {
           {titles.map((title) => {
             const reign = champions.find((c) => c.title.id === title.id);
             return (
-              <li key={title.id} className="card p-4">
+              <li key={title.id} className="card-raised border-l-2 border-l-played-500 p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <Link href={`/titles/${title.id}`} className="font-semibold hover:text-played-300">
-                      {title.name}
+                    <Link href={`/titles/${title.id}`} className="block">
+                      <span className="name block text-played-300">{title.name}</span>
                     </Link>
-                    <p className="text-xs text-ink-500">{title.company.name}</p>
+                    <p className="display mt-0.5 text-[10px] tracking-widest text-ink-500">
+                      {title.company.name}
+                    </p>
                   </div>
                   {!title.isActive && <span className="chip-muted">Retired</span>}
                 </div>
-                <div className="mt-3 rounded-lg border border-played-500/25 bg-played-500/5 p-3">
+                <div className="mt-3 rounded-[2px] border border-played-500/25 bg-played-500/[0.07] p-3">
                   {reign ? (
                     <>
-                      <p className="text-sm font-semibold text-played-300">
+                      <p className="name text-played-200">
                         {reign.holders.map((holder, index) => (
                           <span key={holder.id}>
                             {index > 0 && " & "}
@@ -51,13 +53,13 @@ export default async function TitlesPage() {
                           </span>
                         ))}
                       </p>
-                      <p className="mt-0.5 text-xs text-ink-500">{formatDuration(reign.days)}</p>
+                      <p className="stat mt-1 text-xs text-ink-400">{formatDuration(reign.days)}</p>
                     </>
                   ) : (
                     <p className="text-sm text-ink-500">Vacant — no reign yet</p>
                   )}
                 </div>
-                <p className="mt-2 text-xs text-ink-600">
+                <p className="display mt-2 text-[10px] tracking-widest text-ink-600">
                   {title._count.reigns} reign{title._count.reigns === 1 ? "" : "s"}
                 </p>
               </li>

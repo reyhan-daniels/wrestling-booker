@@ -26,7 +26,7 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
   if (!company) notFound();
 
   const [champions, shows] = await Promise.all([
-    getCurrentChampions(id),
+    getCurrentChampions(id, company.worldId),
     db.show.findMany({
       where: { companies: { some: { id } } },
       orderBy: { date: "desc" },

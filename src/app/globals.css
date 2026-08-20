@@ -1,52 +1,59 @@
 @import "tailwindcss";
 
-/* Dark by default: this gets used on a phone, at night, on a couch.
-   Two colours carry the whole model —
-     plan   (blue)  = the future, freely editable
-     played (gold)  = finalized history, locked forever */
+/* Broadcast graphics: condensed caps, hard edges, accent rules, and gold that
+   only ever means a championship.
+
+   Two colours carry the model —
+     plan   (blue) = the future, freely editable
+     played (gold) = finalized history, locked forever */
 @theme {
-  --color-ink-950: #08090c;
-  --color-ink-900: #0d0f14;
-  --color-ink-850: #12151c;
-  --color-ink-800: #171b24;
-  --color-ink-700: #222836;
-  --color-ink-600: #323a4d;
-  --color-ink-500: #4a5468;
-  --color-ink-400: #6b7689;
-  --color-ink-300: #97a1b4;
-  --color-ink-200: #c3cad6;
-  --color-ink-100: #e6eaf1;
+  --color-ink-950: #070809;
+  --color-ink-900: #0b0d10;
+  --color-ink-850: #101318;
+  --color-ink-800: #161a21;
+  --color-ink-700: #202631;
+  --color-ink-600: #2e3746;
+  --color-ink-500: #465165;
+  --color-ink-400: #6a7589;
+  --color-ink-300: #98a2b5;
+  --color-ink-200: #c6ccd8;
+  --color-ink-100: #eaeef4;
 
-  --color-plan-500: #3b82f6;
-  --color-plan-400: #60a5fa;
-  --color-plan-300: #93c5fd;
+  --color-plan-600: #1d4ed8;
+  --color-plan-500: #2563eb;
+  --color-plan-400: #3b82f6;
+  --color-plan-300: #7dabfb;
 
-  --color-played-500: #d4a017;
-  --color-played-400: #eab308;
-  --color-played-300: #fcd34d;
+  --color-played-600: #a97a10;
+  --color-played-500: #c9971f;
+  --color-played-400: #e0b23c;
+  --color-played-300: #f2ce6b;
 
-  --color-danger-500: #dc2626;
-  --color-danger-400: #f87171;
+  --color-danger-500: #b91c1c;
+  --color-danger-400: #ef4444;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-oswald), "Arial Narrow", ui-sans-serif, sans-serif;
+
+  --radius-card: 3px;
 }
 
 html {
   background: var(--color-ink-950);
   color: var(--color-ink-100);
-  /* Keep iOS from zooming when a form field is focused. */
   -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--color-ink-950);
+  background:
+    radial-gradient(1200px 600px at 50% -200px, rgba(37, 99, 235, 0.07), transparent 70%),
+    var(--color-ink-950);
   color: var(--color-ink-100);
   font-family: var(--font-sans);
   overscroll-behavior-y: none;
 }
 
-/* Respect the iPhone home indicator / notch. */
 @utility pb-safe {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
@@ -54,20 +61,49 @@ body {
   padding-top: max(0.5rem, env(safe-area-inset-top));
 }
 
-/* `btn` and `chip` are utilities rather than plain classes so the variants
-   below can @apply them — Tailwind v4 only lets you @apply real utilities. */
+/* Condensed caps, tightened. The workhorse of the whole look. */
+@utility display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  line-height: 1.05;
+}
+
+/* The accent rule: ▍ before a heading or beside a card. */
+@utility rule {
+  border-left-width: 3px;
+  padding-left: 0.625rem;
+}
+
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium
-    transition-colors select-none disabled:opacity-50 disabled:pointer-events-none;
+  @apply inline-flex items-center justify-center gap-2 rounded-[3px] px-4 py-2.5 text-[13px]
+    font-semibold tracking-wide uppercase transition-colors select-none
+    disabled:opacity-40 disabled:pointer-events-none;
+  font-family: var(--font-display);
+  letter-spacing: 0.06em;
 }
 
 @utility chip {
-  @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-wide uppercase;
+  @apply inline-flex items-center gap-1 rounded-[2px] px-1.5 py-0.5 text-[10px] font-semibold uppercase;
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+}
+
+@utility card {
+  @apply rounded-[3px] border border-ink-700 bg-ink-850;
+}
+
+/* Section heading: condensed caps behind an accent rule. */
+@utility section-title {
+  @apply rule border-ink-600 text-[11px] font-semibold tracking-[0.16em] text-ink-300 uppercase;
+  font-family: var(--font-display);
 }
 
 @layer components {
-  .card {
-    @apply rounded-xl border border-ink-700 bg-ink-850;
+  /* A surface that reads as "this is the important one". */
+  .card-raised {
+    @apply card bg-gradient-to-b from-ink-800 to-ink-850 shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset];
   }
 
   .btn-primary {
@@ -77,31 +113,56 @@ body {
     @apply btn bg-played-500 text-ink-950 hover:bg-played-400;
   }
   .btn-ghost {
-    @apply btn border border-ink-700 bg-ink-800 text-ink-200 hover:bg-ink-700 hover:text-ink-100;
+    @apply btn border border-ink-700 bg-ink-800 text-ink-200 hover:border-ink-600 hover:bg-ink-700 hover:text-ink-100;
   }
   .btn-danger {
     @apply btn border border-danger-500/40 bg-danger-500/10 text-danger-400 hover:bg-danger-500/20;
   }
 
   .field {
-    @apply w-full rounded-lg border border-ink-700 bg-ink-900 px-3 py-2.5 text-[16px] text-ink-100
+    @apply w-full rounded-[3px] border border-ink-700 bg-ink-900 px-3 py-2.5 text-[16px] text-ink-100
       placeholder:text-ink-500 outline-none focus:border-plan-500 focus:ring-1 focus:ring-plan-500;
   }
   .label {
-    @apply mb-1.5 block text-xs font-semibold tracking-wide text-ink-400 uppercase;
+    @apply mb-1.5 block text-[10px] font-semibold tracking-[0.14em] text-ink-400 uppercase;
+    font-family: var(--font-display);
   }
 
   .chip-plan {
-    @apply chip bg-plan-500/15 text-plan-300;
+    @apply chip bg-plan-500/20 text-plan-300;
   }
   .chip-played {
-    @apply chip bg-played-500/15 text-played-300;
+    @apply chip bg-played-500/20 text-played-300;
   }
   .chip-muted {
     @apply chip bg-ink-700 text-ink-300;
   }
 
-  .section-title {
-    @apply text-xs font-semibold tracking-widest text-ink-400 uppercase;
+  .section-title-gold {
+    @apply section-title border-played-500 text-played-300;
+  }
+
+  /* A wrestler's name, a show name, a belt. */
+  .name {
+    @apply display text-[15px] font-semibold text-ink-100;
+  }
+  .name-lg {
+    @apply display text-2xl font-bold text-ink-100 lg:text-[2rem];
+  }
+
+  /* Preflight resets buttons to text-transform: none, so a name rendered
+     inside a peek trigger would silently lose its caps. */
+  .name button,
+  .name a,
+  .name-lg button,
+  .name-lg a {
+    text-transform: inherit;
+    font-family: inherit;
+    font-weight: inherit;
+  }
+
+  /* Records and reign lengths read as scoreboard numbers. */
+  .stat {
+    @apply font-mono text-sm tabular-nums;
   }
 }

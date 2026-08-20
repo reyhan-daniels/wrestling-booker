@@ -238,9 +238,13 @@ export async function getTitleHistory(titleId: string) {
   return { ...title, reigns, current: reigns.find((r) => r.isCurrent) ?? null };
 }
 
-export async function getCurrentChampions(companyId?: string) {
+export async function getCurrentChampions(companyId?: string, worldId?: string) {
   const reigns = await db.reign.findMany({
-    where: { endedOn: null, title: companyId ? { companyId } : undefined },
+    where: {
+      endedOn: null,
+      // Without the world filter this returns champions from every save.
+      title: { ...(companyId ? { companyId } : {}), company: { worldId } },
+    },
     include: {
       holders: { select: { id: true, name: true } },
       title: { select: { id: true, name: true, companyId: true, company: { select: { name: true } } } },

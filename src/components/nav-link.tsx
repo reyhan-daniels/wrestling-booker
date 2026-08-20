@@ -19,7 +19,9 @@ export function NavLink({
     <Link
       href={href}
       className={`${className} transition-colors ${
-        active ? "bg-ink-800 text-ink-100 lg:bg-ink-800" : "text-ink-400 hover:text-ink-100"
+        active
+          ? "border-played-500 bg-ink-800 text-ink-100"
+          : "text-ink-400 hover:bg-ink-850 hover:text-ink-100"
       }`}
     >
       {children}

@@ -50,14 +50,14 @@ function matchLine(row: MatchRow, perspectiveId?: string): PeekMatchLine {
 async function wrestlerPayload(id: string): Promise<PeekPayload | null> {
   const wrestler = await db.wrestler.findUnique({
     where: { id },
-    select: { id: true, name: true, nickname: true, align: true, status: true },
+    select: { id: true, name: true, nickname: true, align: true, status: true, worldId: true },
   });
   if (!wrestler) return null;
 
   const [rows, opponents, champions] = await Promise.all([
     getMatchesFor(id),
     getTopOpponents(id, 5),
-    getCurrentChampions(),
+    getCurrentChampions(undefined, wrestler.worldId),
   ]);
 
   const record = recordFrom(rows, id);

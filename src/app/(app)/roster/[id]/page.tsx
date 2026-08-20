@@ -29,7 +29,7 @@ export default async function WrestlerPage({ params }: PageProps<"/roster/[id]">
   const [rows, opponents, champions, companies, upcoming] = await Promise.all([
     getMatchesFor(id),
     getTopOpponents(id, 6),
-    getCurrentChampions(),
+    getCurrentChampions(undefined, wrestler.worldId),
     db.company.findMany({ where: { worldId: world.id }, orderBy: { name: "asc" } }),
     db.segment.findMany({
       where: { show: { isFinalized: false }, participants: { some: { wrestlerId: id } } },

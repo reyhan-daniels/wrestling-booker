@@ -4,6 +4,7 @@ import { getRecords, formatRecord } from "@/lib/derive";
 import { getActiveWorld } from "@/lib/world";
 import { PageHeader, Empty } from "@/components/ui";
 import { PeekName } from "@/components/peek/peek-triggers";
+import { Avatar } from "@/components/avatar";
 import { ALIGNMENT_LABELS } from "@/lib/constants";
 
 export const metadata = { title: "Roster — Wrestling Booker" };
@@ -21,6 +22,7 @@ export default async function RosterPage({ searchParams }: PageProps<"/roster">)
       ...(query ? { name: { contains: query, mode: "insensitive" as const } } : {}),
     },
     include: {
+      photo: { select: { wrestlerId: true } },
       contracts: {
         where: { endedOn: null },
         include: { company: { select: { id: true, name: true, abbreviation: true } } },
@@ -59,7 +61,7 @@ export default async function RosterPage({ searchParams }: PageProps<"/roster">)
       <div className="mb-4">
         <Link
           href={showRetired ? "/roster" : "/roster?retired=1"}
-          className="text-xs text-ink-400 hover:text-ink-100"
+          className="display text-[10px] tracking-widest text-ink-500 hover:text-ink-200"
         >
           {showRetired ? "Hide retired" : "Show retired"}
         </Link>
@@ -74,28 +76,45 @@ export default async function RosterPage({ searchParams }: PageProps<"/roster">)
           {wrestlers.map((wrestler) => {
             const record = records.get(wrestler.id);
             return (
-              <li key={wrestler.id} className="card flex items-center gap-3 p-3">
+              <li
+                key={wrestler.id}
+                className="card-raised group flex items-center gap-3 border-l-2 border-l-ink-700 p-2.5 transition-colors hover:border-l-played-500"
+              >
+                <Avatar
+                  id={wrestler.id}
+                  name={wrestler.name}
+                  hasPhoto={Boolean(wrestler.photo)}
+                  size={44}
+                />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Link href={`/roster/${wrestler.id}`} className="truncate font-medium hover:text-plan-300">
+                  <Link href={`/roster/${wrestler.id}`} className="block">
+                    <span className="name block truncate group-hover:text-played-300">
                       {wrestler.name}
-                    </Link>
-                    {wrestler.status === "RETIRED" && <span className="chip-muted">Retired</span>}
-                  </div>
-                  <p className="mt-0.5 truncate text-xs text-ink-500">
-                    {[
-                      ALIGNMENT_LABELS[wrestler.align],
-                      ...wrestler.contracts.map(
-                        (c) => c.company.abbreviation ?? c.company.name,
-                      ),
-                    ].join(" · ")}
+                    </span>
+                  </Link>
+                  <p className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-ink-500">
+                    <span
+                      className={
+                        wrestler.align === "FACE"
+                          ? "text-plan-300"
+                          : wrestler.align === "HEEL"
+                            ? "text-danger-400"
+                            : "text-ink-400"
+                      }
+                    >
+                      {ALIGNMENT_LABELS[wrestler.align]}
+                    </span>
+                    <span className="text-ink-700">|</span>
+                    <span className="truncate">
+                      {wrestler.contracts.map((c) => c.company.abbreviation ?? c.company.name).join(" · ") ||
+                        "Free agent"}
+                    </span>
+                    {wrestler.status === "RETIRED" && <span className="chip-muted">Ret</span>}
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <span className="font-mono text-sm tabular-nums text-ink-200">
-                    {record ? formatRecord(record) : "0-0"}
-                  </span>
-                  <PeekName id={wrestler.id} className="mt-0.5 block text-[11px] text-ink-500">
+                  <span className="stat block text-ink-200">{record ? formatRecord(record) : "0-0"}</span>
+                  <PeekName id={wrestler.id} className="display mt-0.5 block text-[10px] tracking-widest text-ink-600">
                     peek
                   </PeekName>
                 </div>

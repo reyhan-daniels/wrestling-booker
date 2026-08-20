@@ -31,7 +31,7 @@ export default async function HomePage() {
       orderBy: { date: "desc" },
       take: 5,
     }),
-    getCurrentChampions(),
+    getCurrentChampions(undefined, world.id),
     getExpiredContracts(world.id, today),
     Promise.all([
       db.wrestler.count({ where: { worldId: world.id } }),
@@ -46,13 +46,15 @@ export default async function HomePage() {
     <div>
       <PageHeader
         title={world.name}
-        subtitle={`${wrestlerCount} wrestlers · ${companyCount} companies · ${playedCount} shows played`}
+        subtitle={`${wrestlerCount} wrestler${wrestlerCount === 1 ? "" : "s"} · ${companyCount} compan${
+          companyCount === 1 ? "y" : "ies"
+        } · ${playedCount} show${playedCount === 1 ? "" : "s"} played`}
         action={<Link href="/shows/new" className="btn-primary">New show</Link>}
       />
 
       {expired.length > 0 && (
-        <section className="card mb-4 border-played-500/30 bg-played-500/5 p-4">
-          <p className="section-title text-played-300">Needs your attention</p>
+        <section className="card-raised mb-4 border-l-2 border-l-played-500 p-4">
+          <p className="section-title-gold">Needs your attention</p>
           <ul className="space-y-2">
             {expired.map((contract) => (
               <li key={contract.id} className="rounded-lg border border-ink-700 bg-ink-900 p-3">
@@ -92,7 +94,7 @@ export default async function HomePage() {
       )}
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="card p-4">
+        <section className="card-raised p-4">
           <p className="section-title mb-3">Ready to play</p>
           {due.length === 0 ? (
             <p className="text-sm text-ink-500">Nothing waiting.</p>
@@ -119,7 +121,7 @@ export default async function HomePage() {
           )}
         </section>
 
-        <section className="card p-4">
+        <section className="card-raised p-4">
           <p className="section-title mb-3">Booked ahead</p>
           {upcoming.length === 0 ? (
             <Empty>
@@ -139,7 +141,7 @@ export default async function HomePage() {
           )}
         </section>
 
-        <section className="card p-4">
+        <section className="card-raised p-4">
           <p className="section-title mb-3">Champions</p>
           {champions.length === 0 ? (
             <p className="text-sm text-ink-500">No champions yet.</p>
@@ -147,10 +149,10 @@ export default async function HomePage() {
             <ul className="space-y-1.5">
               {champions.map((reign) => (
                 <li key={reign.id} className="rounded-lg border border-ink-800 bg-ink-900 px-3 py-2">
-                  <PeekTitleBelt id={reign.title.id} className="text-xs text-ink-500">
-                    {reign.title.company.name} {reign.title.name}
+                  <PeekTitleBelt id={reign.title.id} className="display block text-[10px] tracking-widest text-ink-500 no-underline">
+                    {reign.title.name}
                   </PeekTitleBelt>
-                  <p className="mt-0.5 text-sm font-semibold text-played-300">
+                  <p className="name mt-1 text-played-200">
                     {reign.holders.map((holder, index) => (
                       <span key={holder.id}>
                         {index > 0 && " & "}
@@ -167,7 +169,7 @@ export default async function HomePage() {
           )}
         </section>
 
-        <section className="card p-4">
+        <section className="card-raised p-4">
           <p className="section-title mb-3">Recently played</p>
           {played.length === 0 ? (
             <p className="text-sm text-ink-500">No history yet.</p>

@@ -17,7 +17,7 @@ export function PeekName({
     <button
       type="button"
       onClick={() => open({ kind: "wrestler", id })}
-      className={`text-left underline decoration-ink-600 decoration-dotted underline-offset-4 hover:decoration-plan-400 ${className}`}
+      className={`text-left transition-colors hover:text-played-300 ${className}`}
     >
       {children}
     </button>
@@ -38,7 +38,7 @@ export function PeekTitleBelt({
     <button
       type="button"
       onClick={() => open({ kind: "title", id })}
-      className={`text-left underline decoration-played-500/50 decoration-dotted underline-offset-4 ${className}`}
+      className={`text-left transition-colors hover:text-played-300 ${className}`}
     >
       {children}
     </button>
