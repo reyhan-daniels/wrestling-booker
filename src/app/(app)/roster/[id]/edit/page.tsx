@@ -1,0 +1,30 @@
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { WrestlerForm } from "@/components/wrestler-form";
+import { deleteWrestler, updateWrestler } from "@/lib/actions/roster";
+import { BackLink, PageHeader } from "@/components/ui";
+
+export default async function EditWrestlerPage({ params }: PageProps<"/roster/[id]/edit">) {
+  const { id } = await params;
+  const wrestler = await db.wrestler.findUnique({ where: { id } });
+  if (!wrestler) notFound();
+
+  return (
+    <div className="mx-auto max-w-2xl">
+      <BackLink href={`/roster/${id}`}>{wrestler.name}</BackLink>
+      <PageHeader title={`Edit ${wrestler.name}`} />
+      <WrestlerForm action={updateWrestler} wrestler={wrestler} submitLabel="Save changes" />
+
+      <form action={deleteWrestler} className="mt-8">
+        <input type="hidden" name="id" value={id} />
+        <button type="submit" className="btn-danger w-full">
+          Delete wrestler
+        </button>
+        <p className="mt-2 text-xs text-ink-500">
+          Only possible while they have never appeared on a played show. Otherwise retire them —
+          history cannot be edited.
+        </p>
+      </form>
+    </div>
+  );
+}

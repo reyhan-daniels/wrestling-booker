@@ -1,0 +1,334 @@
+// Wrestling Booker — data model.
+//
+// Two governing rules from the spec drive every choice here:
+//   1. Enter once, derive everything. Nothing computable is stored. There are no
+//      win/loss columns, no "current champion" field, no rivalry rows.
+//   2. Nothing happens on its own. Every date field is inert. Contracts do not
+//      expire; the app only surfaces that a date has passed.
+//
+// Wrestlers live at the world level. A company employs them via a Contract; it
+// never owns them. That is what makes crossover native rather than a hack.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// World — the save / universe
+// ---------------------------------------------------------------------------
+
+model World {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  wrestlers Wrestler[]
+  companies Company[]
+  contracts Contract[]
+  shows     Show[]
+}
+
+// ---------------------------------------------------------------------------
+// Wrestler — a world-level person
+// ---------------------------------------------------------------------------
+
+enum Alignment {
+  FACE
+  HEEL
+  TWEENER
+}
+
+enum WrestlerStatus {
+  ACTIVE
+  RETIRED
+}
+
+model Wrestler {
+  id       String         @id @default(cuid())
+  worldId  String
+  world    World          @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  name     String
+  nickname String?
+  height   String?
+  weight   String?
+  align    Alignment      @default(TWEENER)
+  status   WrestlerStatus @default(ACTIVE)
+
+  /// Up to 5, ordered. A collection, never a comma-joined string.
+  /// The 5-entry cap is enforced in the app layer (src/lib/validation.ts).
+  signatureMoves String[] @default([])
+
+  /// One portrait, stored in the database so it is covered by the same backups
+  /// as the rest of the world. Bytes live in WrestlerPhoto so they never ride
+  /// along on ordinary roster queries.
+  photo WrestlerPhoto?
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contracts   Contract[]
+  appearances SegmentParticipant[]
+  reigns      Reign[]              @relation("ReignHolders")
+
+  @@index([worldId, name])
+}
+
+model WrestlerPhoto {
+  wrestlerId String   @id
+  wrestler   Wrestler @relation(fields: [wrestlerId], references: [id], onDelete: Cascade)
+  mimeType   String
+  bytes      Bytes
+  updatedAt  DateTime @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Company — a promotion
+// ---------------------------------------------------------------------------
+
+model Company {
+  id           String  @id @default(cuid())
+  worldId      String
+  world        World   @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  name         String
+  abbreviation String?
+  /// Tailwind-ish accent used to tint the company on the calendar.
+  color        String?
+  notes        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  titles    Title[]
+  series    WeeklySeries[]
+  contracts Contract[]
+  /// A show may be co-promoted, so this is many-to-many in both directions.
+  shows     Show[]         @relation("ShowCompanies")
+
+  @@index([worldId, name])
+}
+
+// ---------------------------------------------------------------------------
+// Contract — one wrestler <-> one company
+// ---------------------------------------------------------------------------
+
+model Contract {
+  id         String   @id @default(cuid())
+  worldId    String
+  world      World    @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  wrestlerId String
+  wrestler   Wrestler @relation(fields: [wrestlerId], references: [id], onDelete: Cascade)
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  /// Is this the wrestler's home roster? At most one primary per wrestler.
+  isPrimary Boolean @default(false)
+
+  signedOn  DateTime? @db.Date
+  /// Inert. Nothing expires on its own; a passed date is only ever surfaced.
+  expiresOn DateTime? @db.Date
+  salary    String?
+  notes     String?
+
+  /// Set when you choose "leave as free agent". Keeps the deal as history
+  /// instead of deleting it.
+  endedOn DateTime? @db.Date
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([wrestlerId])
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// Title — a spine of reigns
+// ---------------------------------------------------------------------------
+
+model Title {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name      String
+  /// Retired belts stay in the world; their lineage is still readable.
+  isActive  Boolean @default(true)
+  notes     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reigns   Reign[]
+  defences Segment[]
+
+  @@index([companyId])
+}
+
+/// Never typed by hand. Reigns are opened and closed by *playing* a title match.
+/// The current champion is simply the most recent reign with no endedOn.
+model Reign {
+  id      String @id @default(cuid())
+  titleId String
+  title   Title  @relation(fields: [titleId], references: [id], onDelete: Cascade)
+
+  /// Usually one wrestler; a set for tag/trios belts.
+  holders Wrestler[] @relation("ReignHolders")
+
+  startedOn      DateTime @db.Date
+  wonAtShowId    String?
+  wonAtShow      Show?    @relation("ReignWonAt", fields: [wonAtShowId], references: [id], onDelete: SetNull)
+  wonAtSegmentId String?
+
+  endedOn         DateTime? @db.Date
+  lostAtShowId    String?
+  lostAtShow      Show?     @relation("ReignLostAt", fields: [lostAtShowId], references: [id], onDelete: SetNull)
+  lostAtSegmentId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([titleId, startedOn])
+}
+
+// ---------------------------------------------------------------------------
+// Schedule — weekly series produce episodes; specials stand alone
+// ---------------------------------------------------------------------------
+
+enum Cadence {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+/// Defined once. The calendar projects its future slots without storing them;
+/// a slot only becomes a Show row when you start booking it.
+model WeeklySeries {
+  id        String    @id @default(cuid())
+  companyId String
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name      String
+  cadence   Cadence   @default(WEEKLY)
+  /// Anchor date. Day-of-week and every future slot are derived from this.
+  startsOn  DateTime  @db.Date
+  /// Set to stop projecting future episodes. Past episodes remain.
+  endedOn   DateTime? @db.Date
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shows Show[]
+
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// Show — the card
+// ---------------------------------------------------------------------------
+
+model Show {
+  id      String @id @default(cuid())
+  worldId String
+  world   World  @relation(fields: [worldId], references: [id], onDelete: Cascade)
+
+  name String
+  date DateTime @db.Date
+
+  /// Set for an episode of a weekly series; null for a standalone special.
+  seriesId String?
+  series   WeeklySeries? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+
+  /// One or more owning companies (joint / co-promoted events).
+  companies Company[] @relation("ShowCompanies")
+
+  venue String?
+  notes String?
+
+  /// The one-way door. Set by *playing* the show; the boundary between an
+  /// editable plan and immutable history.
+  isFinalized Boolean   @default(false)
+  playedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  segments   Segment[]
+  reignsWon  Reign[]   @relation("ReignWonAt")
+  reignsLost Reign[]   @relation("ReignLostAt")
+
+  @@index([worldId, date])
+  @@index([seriesId, date])
+}
+
+// ---------------------------------------------------------------------------
+// Segment — the card unit. A match is a segment whose type is MATCH.
+// ---------------------------------------------------------------------------
+
+enum SegmentType {
+  MATCH
+  PROMO
+  BACKSTAGE
+  CONTRACT_SIGNING
+  VIDEO_PACKAGE
+  BRAWL
+  INTERVIEW
+  ANGLE
+  OTHER
+}
+
+model Segment {
+  id     String @id @default(cuid())
+  showId String
+  show   Show   @relation(fields: [showId], references: [id], onDelete: Cascade)
+
+  /// Position on the card.
+  order Int
+
+  type       SegmentType @default(MATCH)
+  /// The escape hatch: free text used when type is OTHER.
+  customType String?
+
+  /// What this was *about* / booking intent. Written while booking.
+  note String?
+
+  // --- match-only result payload -------------------------------------------
+
+  /// Firing this is what creates and closes reigns when the show is played.
+  isTitleMatch Boolean @default(false)
+  titleId      String?
+  title        Title?  @relation(fields: [titleId], references: [id], onDelete: SetNull)
+
+  /// Pick-list with a freeform escape hatch. Blank for a standard match.
+  stipulation String?
+
+  /// How it *finished*. Written while playing, distinct from `note`.
+  resultNote String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants SegmentParticipant[]
+
+  @@index([showId, order])
+}
+
+/// The winner is the single most important input in the tool: it is what
+/// ripples upstream into records, reigns and head-to-heads. It is only ever
+/// set during Play, never during Booking.
+model SegmentParticipant {
+  id         String   @id @default(cuid())
+  segmentId  String
+  segment    Segment  @relation(fields: [segmentId], references: [id], onDelete: Cascade)
+  wrestlerId String
+  wrestler   Wrestler @relation(fields: [wrestlerId], references: [id], onDelete: Cascade)
+
+  order    Int
+  isWinner Boolean @default(false)
+
+  @@unique([segmentId, wrestlerId])
+  @@index([wrestlerId])
+}

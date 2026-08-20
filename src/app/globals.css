@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+/* Dark by default: this gets used on a phone, at night, on a couch.
+   Two colours carry the whole model —
+     plan   (blue)  = the future, freely editable
+     played (gold)  = finalized history, locked forever */
+@theme {
+  --color-ink-950: #08090c;
+  --color-ink-900: #0d0f14;
+  --color-ink-850: #12151c;
+  --color-ink-800: #171b24;
+  --color-ink-700: #222836;
+  --color-ink-600: #323a4d;
+  --color-ink-500: #4a5468;
+  --color-ink-400: #6b7689;
+  --color-ink-300: #97a1b4;
+  --color-ink-200: #c3cad6;
+  --color-ink-100: #e6eaf1;
+
+  --color-plan-500: #3b82f6;
+  --color-plan-400: #60a5fa;
+  --color-plan-300: #93c5fd;
+
+  --color-played-500: #d4a017;
+  --color-played-400: #eab308;
+  --color-played-300: #fcd34d;
+
+  --color-danger-500: #dc2626;
+  --color-danger-400: #f87171;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  background: var(--color-ink-950);
+  color: var(--color-ink-100);
+  /* Keep iOS from zooming when a form field is focused. */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-ink-950);
+  color: var(--color-ink-100);
+  font-family: var(--font-sans);
+  overscroll-behavior-y: none;
+}
+
+/* Respect the iPhone home indicator / notch. */
+@utility pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+@utility pt-safe {
+  padding-top: max(0.5rem, env(safe-area-inset-top));
+}
+
+/* `btn` and `chip` are utilities rather than plain classes so the variants
+   below can @apply them — Tailwind v4 only lets you @apply real utilities. */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2.5 text-sm font-medium
+    transition-colors select-none disabled:opacity-50 disabled:pointer-events-none;
+}
+
+@utility chip {
+  @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-wide uppercase;
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-ink-700 bg-ink-850;
+  }
+
+  .btn-primary {
+    @apply btn bg-plan-500 text-white hover:bg-plan-400;
+  }
+  .btn-gold {
+    @apply btn bg-played-500 text-ink-950 hover:bg-played-400;
+  }
+  .btn-ghost {
+    @apply btn border border-ink-700 bg-ink-800 text-ink-200 hover:bg-ink-700 hover:text-ink-100;
+  }
+  .btn-danger {
+    @apply btn border border-danger-500/40 bg-danger-500/10 text-danger-400 hover:bg-danger-500/20;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-ink-700 bg-ink-900 px-3 py-2.5 text-[16px] text-ink-100
+      placeholder:text-ink-500 outline-none focus:border-plan-500 focus:ring-1 focus:ring-plan-500;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-semibold tracking-wide text-ink-400 uppercase;
+  }
+
+  .chip-plan {
+    @apply chip bg-plan-500/15 text-plan-300;
+  }
+  .chip-played {
+    @apply chip bg-played-500/15 text-played-300;
+  }
+  .chip-muted {
+    @apply chip bg-ink-700 text-ink-300;
+  }
+
+  .section-title {
+    @apply text-xs font-semibold tracking-widest text-ink-400 uppercase;
+  }
+}
