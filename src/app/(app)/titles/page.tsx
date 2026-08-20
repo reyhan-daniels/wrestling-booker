@@ -14,7 +14,7 @@ export default async function TitlesPage() {
     db.title.findMany({
       where: { company: { worldId: world.id } },
       include: { company: { select: { id: true, name: true } }, _count: { select: { reigns: true } } },
-      orderBy: [{ company: { name: "asc" } }, { isActive: "desc" }, { name: "asc" }],
+      orderBy: [{ company: { order: "asc" } }, { company: { name: "asc" } }, { order: "asc" }, { name: "asc" }],
     }),
     getCurrentChampions(undefined, world.id),
   ]);

@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Company" ADD COLUMN     "order" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "Title" ADD COLUMN     "order" INTEGER NOT NULL DEFAULT 0;

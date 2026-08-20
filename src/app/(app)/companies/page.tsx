@@ -13,7 +13,7 @@ export default async function CompaniesPage() {
       _count: { select: { titles: true, series: true, shows: true } },
       contracts: { where: { endedOn: null }, select: { id: true } },
     },
-    orderBy: { name: "asc" },
+    orderBy: [{ order: "asc" }, { name: "asc" }],
   });
 
   return (

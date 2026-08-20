@@ -2,11 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { CADENCE_LABELS } from "@/lib/constants";
-import { formatDate, todayISO, weekdayName } from "@/lib/dates";
 import { getCurrentChampions } from "@/lib/derive";
 import { createSeries, createTitle, deleteCompany, deleteSeries, updateCompany } from "@/lib/actions/companies";
 import { BackLink, Empty, PageHeader, StateChip } from "@/components/ui";
 import { PeekName } from "@/components/peek/peek-triggers";
+import { SortableTitles } from "@/components/sortable-titles";
+import { formatDate, formatDuration, todayISO, weekdayName } from "@/lib/dates";
 
 export default async function CompanyPage({ params }: PageProps<"/companies/[id]">) {
   const { id } = await params;
@@ -14,7 +15,7 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
   const company = await db.company.findUnique({
     where: { id },
     include: {
-      titles: { orderBy: [{ isActive: "desc" }, { name: "asc" }] },
+      titles: { orderBy: [{ order: "asc" }, { name: "asc" }] },
       series: { orderBy: { startsOn: "asc" } },
       contracts: {
         where: { endedOn: null },
@@ -54,26 +55,19 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
           {company.titles.length === 0 ? (
             <p className="text-sm text-ink-500">No titles yet.</p>
           ) : (
-            <ul className="space-y-2">
-              {company.titles.map((title) => {
+            <SortableTitles
+              companyId={id}
+              titles={company.titles.map((title) => {
                 const reign = champions.find((c) => c.title.id === title.id);
-                return (
-                  <li key={title.id} className="rounded-lg border border-ink-800 bg-ink-900 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <Link href={`/titles/${title.id}`} className="font-medium hover:text-played-300">
-                        {title.name}
-                      </Link>
-                      {!title.isActive && <span className="chip-muted">Retired</span>}
-                    </div>
-                    <p className="mt-1 text-xs text-ink-500">
-                      {reign
-                        ? `${reign.holders.map((h) => h.name).join(" & ")} · ${reign.days} days`
-                        : "Vacant — no reign yet"}
-                    </p>
-                  </li>
-                );
+                return {
+                  id: title.id,
+                  name: title.name,
+                  isActive: title.isActive,
+                  champion: reign ? reign.holders.map((h) => h.name).join(" & ") : null,
+                  detail: reign ? formatDuration(reign.days) : null,
+                };
               })}
-            </ul>
+            />
           )}
 
           <details className="mt-4">

@@ -102,6 +102,8 @@ model Company {
   /// Tailwind-ish accent used to tint the company on the calendar.
   color        String?
   notes        String?
+  /// Hand-sorted rather than alphabetical.
+  order        Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -160,6 +162,8 @@ model Title {
   /// Retired belts stay in the world; their lineage is still readable.
   isActive  Boolean @default(true)
   notes     String?
+  /// Hand-sorted: world title first, then secondary, then tag. Set by dragging.
+  order     Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

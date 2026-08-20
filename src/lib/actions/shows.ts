@@ -281,3 +281,18 @@ export async function duplicateShow(data: FormData) {
   revalidatePath("/calendar");
   redirect(`/shows/${copy.id}`);
 }
+
+/** Persist a dragged card order. Positions stay 1-based and contiguous. */
+export async function reorderSegments(data: FormData) {
+  const showId = requiredText(data, "showId", "Show");
+  await assertEditable(showId);
+  const ids = list(data, "ids");
+
+  await db.$transaction(
+    ids.map((id, index) =>
+      db.segment.updateMany({ where: { id, showId }, data: { order: index + 1 } }),
+    ),
+  );
+
+  refreshShow(showId);
+}

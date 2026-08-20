@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { Cadence } from "@/generated/prisma/enums";
-import { bool, date, requiredDate, requiredText, text } from "@/lib/form";
+import { bool, date, list, requiredDate, requiredText, text } from "@/lib/form";
 import { getActiveWorld } from "@/lib/world";
 
 export async function createCompany(data: FormData) {
@@ -129,5 +129,36 @@ export async function deleteSeries(data: FormData) {
   const id = requiredText(data, "id", "Series");
   const series = await db.weeklySeries.delete({ where: { id } });
   revalidatePath(`/companies/${series.companyId}`);
+  revalidatePath("/calendar");
+}
+
+/** Persist a hand-sorted title order for one company. */
+export async function reorderTitles(data: FormData) {
+  const companyId = requiredText(data, "companyId", "Company");
+  const ids = list(data, "ids");
+
+  await db.$transaction(
+    ids.map((id, index) =>
+      db.title.updateMany({ where: { id, companyId }, data: { order: index } }),
+    ),
+  );
+
+  revalidatePath(`/companies/${companyId}`);
+  revalidatePath("/titles");
+}
+
+/** Persist a hand-sorted company order for the world. */
+export async function reorderCompanies(data: FormData) {
+  const ids = list(data, "ids");
+  const world = await getActiveWorld();
+
+  await db.$transaction(
+    ids.map((id, index) =>
+      db.company.updateMany({ where: { id, worldId: world.id }, data: { order: index } }),
+    ),
+  );
+
+  revalidatePath("/companies");
+  revalidatePath("/titles");
   revalidatePath("/calendar");
 }
