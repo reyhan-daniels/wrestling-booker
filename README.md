@@ -119,6 +119,40 @@ Nothing here is hard-coded to a provider; the app only needs `DATABASE_URL`.
 5. Deploy. `postinstall` runs `prisma generate` so the client is built for you.
 6. Open the URL on your iPhone and add it to the Home Screen.
 
+Use `sslmode=verify-full` in `DATABASE_URL`, not `sslmode=require`. `pg` treats
+them identically today but warns that a future major version will give
+`require` libpq semantics, where the server certificate is *not* verified.
+Being explicit means a dependency bump cannot silently weaken the connection.
+
+### Two Vercel settings that will bite you
+
+Both cost an afternoon if you do not know about them.
+
+**Deployment Protection.** Vercel puts its own SSO gate in front of deployments
+by default — the app redirects to `vercel.com/sso-api` instead of loading. That
+breaks the entire point of this app, which is opening it on a phone. Turn it
+off: *Settings → Deployment Protection → Vercel Authentication → Disabled*. The
+app has its own gate; `src/proxy.ts` sends every unauthenticated request to
+`/login`.
+
+**Commit-author blocking on a private repo.** On the Hobby plan, Vercel checks
+the *commit author's email* against your Vercel account and blocks anything it
+cannot match, because Hobby does not support multiple contributors. A repo
+where commits are authored by anyone else — including a coding agent — is
+refused with "the commit author did not have contributing access".
+
+Three ways out, cheapest first:
+
+- **Make the repo public.** The restriction only applies to private repos, and
+  nothing secret is committed here — real values live in Vercel's environment
+  variables and a gitignored `.env`.
+- **Match the author email** to the one on your Vercel account and re-push.
+- **Deploy from the CLI** (`vercel --prod`), which skips the commit check
+  entirely but gives up deploy-on-push.
+
+A *blocked* deployment is terminal — redeploying it will not re-evaluate the
+permission check. Push a new commit to get a fresh one.
+
 ### Durability — read this part
 
 Your world is years of irreplaceable history, and it is the one thing that must
