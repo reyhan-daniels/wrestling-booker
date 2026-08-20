@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ALIGNMENT_LABELS, MAX_SIGNATURE_MOVES } from "@/lib/constants";
+import { PHOTO_ACCEPT, describePhotoLimit, validatePhoto } from "@/lib/photo";
 
 type Wrestler = {
   id: string;
@@ -14,6 +15,7 @@ type Wrestler = {
   status: string;
   signatureMoves: string[];
   notes: string | null;
+  hasPhoto?: boolean;
 };
 
 function Submit({ label }: { label: string }) {
@@ -40,8 +42,43 @@ export function WrestlerForm({
     wrestler?.signatureMoves.length ? wrestler.signatureMoves : [""],
   );
 
+  // A portrait rides along with the rest of the form, so it can be set at the
+  // moment a wrestler is created rather than only after they exist.
+  const [preview, setPreview] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const [dropExisting, setDropExisting] = useState(false);
+
+  // Object URLs are only freed when we let go of them.
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
+  const existingPhoto =
+    wrestler?.hasPhoto && !dropExisting ? `/api/wrestlers/${wrestler.id}/photo` : null;
+  const shown = preview ?? existingPhoto;
+
+  function chooseFile(file: File | null) {
+    setPhotoError(null);
+    if (preview) URL.revokeObjectURL(preview);
+
+    if (!file) {
+      setPreview(null);
+      return;
+    }
+    const problem = validatePhoto(file);
+    if (problem) {
+      setPreview(null);
+      setPhotoError(problem);
+      return;
+    }
+    setPreview(URL.createObjectURL(file));
+    setDropExisting(false);
+  }
+
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} encType="multipart/form-data" className="space-y-5">
       {wrestler && <input type="hidden" name="id" value={wrestler.id} />}
 
       <div className="card space-y-4 p-4">
@@ -84,6 +121,53 @@ export function WrestlerForm({
               <option value="ACTIVE">Active</option>
               <option value="RETIRED">Retired</option>
             </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="card p-4">
+        <p className="section-title mb-3">Photo</p>
+        <div className="flex items-start gap-4">
+          <div className="size-24 shrink-0 overflow-hidden rounded-lg border border-ink-700 bg-ink-900">
+            {shown ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={shown} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full items-center justify-center text-[11px] text-ink-600">
+                No photo
+              </div>
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <label className="btn-ghost cursor-pointer">
+              {shown ? "Choose a different image" : "Choose an image"}
+              <input
+                type="file"
+                name="photo"
+                accept={PHOTO_ACCEPT}
+                className="hidden"
+                onChange={(event) => chooseFile(event.target.files?.[0] ?? null)}
+              />
+            </label>
+            <p className="mt-2 text-xs text-ink-500">{describePhotoLimit()}</p>
+            {photoError && <p className="mt-1 text-xs text-danger-400">{photoError}</p>}
+
+            {wrestler?.hasPhoto && (
+              <label className="mt-3 flex items-center gap-2 text-xs text-ink-400">
+                <input
+                  type="checkbox"
+                  name="removePhoto"
+                  checked={dropExisting}
+                  onChange={(event) => {
+                    setDropExisting(event.target.checked);
+                    if (event.target.checked) chooseFile(null);
+                  }}
+                  className="size-3.5"
+                />
+                Remove the current photo
+              </label>
+            )}
           </div>
         </div>
       </div>

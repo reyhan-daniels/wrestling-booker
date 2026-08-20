@@ -5,8 +5,7 @@ import { db } from "@/lib/db";
 // Portraits live in Postgres so they are covered by the same backups as the
 // rest of the world. One image per wrestler, replaced in place.
 
-const MAX_BYTES = 2 * 1024 * 1024;
-const ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+import { ALLOWED_PHOTO_TYPES, MAX_PHOTO_BYTES } from "@/lib/photo";
 
 export async function GET(_request: NextRequest, context: RouteContext<"/api/wrestlers/[id]/photo">) {
   const { id } = await context.params;
@@ -30,10 +29,10 @@ export async function POST(request: NextRequest, context: RouteContext<"/api/wre
   if (!(file instanceof File) || file.size === 0) {
     return NextResponse.json({ error: "No file uploaded." }, { status: 400 });
   }
-  if (!ALLOWED.includes(file.type)) {
+  if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
     return NextResponse.json({ error: "Use a JPEG, PNG, WebP or GIF." }, { status: 415 });
   }
-  if (file.size > MAX_BYTES) {
+  if (file.size > MAX_PHOTO_BYTES) {
     return NextResponse.json({ error: "Image must be under 2 MB." }, { status: 413 });
   }
 

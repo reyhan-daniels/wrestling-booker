@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { Alignment, WrestlerStatus } from "@/generated/prisma/enums";
 import { MAX_SIGNATURE_MOVES } from "@/lib/constants";
 import { bool, date, integer, list, requiredText, text } from "@/lib/form";
+import { readPhoto } from "@/lib/photo";
 import { getActiveWorld } from "@/lib/world";
 
 function alignmentOf(data: FormData): Alignment {
@@ -24,18 +25,28 @@ function movesOf(data: FormData): string[] {
 
 export async function createWrestler(data: FormData) {
   const world = await getActiveWorld();
-  const wrestler = await db.wrestler.create({
-    data: {
-      worldId: world.id,
-      name: requiredText(data, "name", "Name"),
-      nickname: text(data, "nickname"),
-      height: text(data, "height"),
-      weight: text(data, "weight"),
-      align: alignmentOf(data),
-      status: statusOf(data),
-      signatureMoves: movesOf(data),
-      notes: text(data, "notes"),
-    },
+  // Read the portrait before the insert so a bad file fails the whole
+  // creation rather than leaving a wrestler with a silently dropped photo.
+  const photo = await readPhoto(data);
+
+  const wrestler = await db.$transaction(async (tx) => {
+    const created = await tx.wrestler.create({
+      data: {
+        worldId: world.id,
+        name: requiredText(data, "name", "Name"),
+        nickname: text(data, "nickname"),
+        height: text(data, "height"),
+        weight: text(data, "weight"),
+        align: alignmentOf(data),
+        status: statusOf(data),
+        signatureMoves: movesOf(data),
+        notes: text(data, "notes"),
+      },
+    });
+    if (photo) {
+      await tx.wrestlerPhoto.create({ data: { wrestlerId: created.id, ...photo } });
+    }
+    return created;
   });
   revalidatePath("/roster");
   redirect(`/roster/${wrestler.id}`);
@@ -43,6 +54,18 @@ export async function createWrestler(data: FormData) {
 
 export async function updateWrestler(data: FormData) {
   const id = requiredText(data, "id", "Wrestler");
+  const photo = await readPhoto(data);
+
+  if (photo) {
+    await db.wrestlerPhoto.upsert({
+      where: { wrestlerId: id },
+      create: { wrestlerId: id, ...photo },
+      update: photo,
+    });
+  } else if (bool(data, "removePhoto")) {
+    await db.wrestlerPhoto.deleteMany({ where: { wrestlerId: id } });
+  }
+
   await db.wrestler.update({
     where: { id },
     data: {
