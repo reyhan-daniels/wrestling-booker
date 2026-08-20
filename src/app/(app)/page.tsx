@@ -93,7 +93,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
         <section className="card-raised p-4">
           <p className="section-title mb-3">Ready to play</p>
           {due.length === 0 ? (

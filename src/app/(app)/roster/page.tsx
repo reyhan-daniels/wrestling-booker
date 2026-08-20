@@ -72,7 +72,7 @@ export default async function RosterPage({ searchParams }: PageProps<"/roster">)
           No wrestlers yet. <Link href="/roster/new" className="text-plan-300 underline">Create the first one.</Link>
         </Empty>
       ) : (
-        <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {wrestlers.map((wrestler) => {
             const record = records.get(wrestler.id);
             return (

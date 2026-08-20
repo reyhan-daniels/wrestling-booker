@@ -45,7 +45,7 @@ export default async function WrestlerPage({ params }: PageProps<"/roster/[id]">
   const past = wrestler.contracts.filter((c) => c.endedOn);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-6xl">
       <BackLink href="/roster">Roster</BackLink>
       <PageHeader
         title={wrestler.name}

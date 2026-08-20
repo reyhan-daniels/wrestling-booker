@@ -37,7 +37,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       <div className="flex min-h-dvh flex-col lg:flex-row">
         {/* Desktop rail. The extra width is used for navigation so the phone
             layout never has to spend vertical space on it. */}
-        <aside className="hidden w-56 shrink-0 border-r border-ink-800 bg-ink-900 lg:block">
+        <aside className="hidden w-56 shrink-0 border-r border-ink-800 bg-ink-900 lg:block 2xl:w-64">
           <div className="sticky top-0 flex h-dvh flex-col p-4">
             <Link href="/" className="mb-5 block">
               <span className="display block text-lg font-bold tracking-wide text-ink-100">
@@ -85,8 +85,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 px-4 pt-4 pb-28 lg:px-8 lg:pt-10 lg:pb-16">
-            <div className="mx-auto w-full max-w-5xl">{children}</div>
+          <main className="min-w-0 flex-1 px-4 pt-4 pb-28 lg:px-10 lg:pt-10 lg:pb-16 2xl:px-14">
+            <div className="mx-auto w-full max-w-[1700px]">{children}</div>
           </main>
 
           {/* Thumb-reachable tabs. */}

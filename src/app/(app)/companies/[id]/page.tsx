@@ -36,7 +36,7 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
   ]);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-6xl">
       <BackLink href="/companies">Companies</BackLink>
       <PageHeader
         title={company.name}

@@ -97,7 +97,7 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
   const matchCount = show.segments.filter((s) => s.type === "MATCH").length;
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-4xl">
       <BackLink href="/calendar">Calendar</BackLink>
 
       <PageHeader

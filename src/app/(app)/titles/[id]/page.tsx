@@ -14,7 +14,7 @@ export default async function TitlePage({ params }: PageProps<"/titles/[id]">) {
   const longest = [...title.reigns].sort((a, b) => b.days - a.days)[0];
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-5xl">
       <BackLink href="/titles">Titles</BackLink>
       <PageHeader title={title.name} subtitle={title.company.name} />
 

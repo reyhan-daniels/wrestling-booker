@@ -67,7 +67,7 @@ export function MonthGrid({
           return (
             <div
               key={index}
-              className={`min-h-28 bg-ink-850 p-1.5 ${inMonth ? "" : "opacity-40"} ${
+              className={`min-h-28 bg-ink-850 p-1.5 2xl:min-h-36 2xl:p-2 ${inMonth ? "" : "opacity-40"} ${
                 isToday ? "ring-1 ring-inset ring-plan-500/60" : ""
               }`}
             >

@@ -26,7 +26,7 @@ export default async function TitlesPage() {
       {titles.length === 0 ? (
         <Empty>No titles yet. Add one from a company page.</Empty>
       ) : (
-        <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {titles.map((title) => {
             const reign = champions.find((c) => c.title.id === title.id);
             return (
