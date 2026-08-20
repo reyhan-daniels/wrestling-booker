@@ -193,10 +193,6 @@ export function PlayView({
 
       <div className="mt-6 card border-played-500/30 bg-played-500/5 p-4">
         <p className="text-sm font-semibold text-played-300">Finalize {showName}</p>
-        <p className="mt-1 text-xs text-ink-400">
-          Playing a show is a one-way door. Once finalized the card and its results become permanent
-          history — they cannot be edited or replayed.
-        </p>
 
         {titleChanges.length > 0 && (
           <ul className="mt-3 space-y-1.5">
@@ -212,10 +208,10 @@ export function PlayView({
         )}
 
         {decided < matches.length && (
-          <p className="mt-3 text-xs text-ink-400">
+          <p className="mt-2 text-xs text-ink-400">
             {matches.length - decided === 1
-              ? "1 match still has no winner. Finalizing now records it as no decision."
-              : `${matches.length - decided} matches still have no winner. Finalizing now records them as no decision.`}
+              ? "1 match has no winner."
+              : `${matches.length - decided} matches have no winner.`}
           </p>
         )}
 
@@ -229,7 +225,7 @@ export function PlayView({
             >
               <input type="hidden" name="showId" value={showId} />
               <button type="submit" className="btn-gold w-full">
-                Yes — play it, permanently
+                Yes, finalize
               </button>
             </form>
             <button type="button" onClick={() => setConfirming(false)} className="btn-ghost w-full">

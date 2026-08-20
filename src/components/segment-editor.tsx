@@ -133,11 +133,6 @@ export function SegmentEditor({
                   ))}
                 </select>
               )}
-              {isTitleMatch && (
-                <p className="mt-2 text-xs text-ink-500">
-                  Playing this match is what moves the lineage. Nothing changes while it is only booked.
-                </p>
-              )}
             </div>
           )}
         </>

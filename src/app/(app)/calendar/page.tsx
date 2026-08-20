@@ -5,6 +5,7 @@ import { getCalendar } from "@/lib/derive";
 import { getActiveWorld } from "@/lib/world";
 import { openSeriesSlot } from "@/lib/actions/shows";
 import { Empty, PageHeader, StateChip } from "@/components/ui";
+import { MonthGrid, type GridEntry } from "@/components/month-grid";
 
 export const metadata = { title: "Calendar — Wrestling Booker" };
 
@@ -31,10 +32,9 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
     `/calendar?m=${month}${companyId ? `&company=${companyId}` : ""}`;
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <PageHeader
         title="Calendar"
-        subtitle="A view of every show, not a stored thing."
         action={<Link href="/shows/new" className="btn-primary">New show</Link>}
       />
 
@@ -62,13 +62,32 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
         ))}
       </div>
 
+      <MonthGrid
+        monthISO={toISODate(from)}
+        today={today}
+        entries={entries.map(
+          (entry): GridEntry => ({
+            kind: entry.kind,
+            id: entry.id,
+            iso: toISODate(entry.date),
+            name: entry.name,
+            companies: entry.companies,
+            isFinalized: entry.kind === "show" ? entry.isFinalized : false,
+            seriesId: entry.seriesId,
+            segmentCount: entry.kind === "show" ? entry.segmentCount : 0,
+          }),
+        )}
+      />
+
       {entries.length === 0 ? (
-        <Empty>
-          Nothing this month. Add a weekly series to a company, or{" "}
-          <Link href="/shows/new" className="text-plan-300 underline">create a special event</Link>.
-        </Empty>
+        <div className="lg:hidden">
+          <Empty>
+            Nothing this month. Add a weekly series to a company, or{" "}
+            <Link href="/shows/new" className="text-plan-300 underline">create a special event</Link>.
+          </Empty>
+        </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-2 lg:hidden">
           {entries.map((entry) => {
             const isToday = toISODate(entry.date) === today;
             return (
@@ -126,9 +145,6 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
         </ul>
       )}
 
-      <p className="mt-4 text-xs text-ink-600">
-        Dashed entries are projected weekly episodes. They only become real when you book them.
-      </p>
     </div>
   );
 }

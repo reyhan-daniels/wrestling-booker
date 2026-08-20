@@ -69,7 +69,7 @@ export default async function WrestlerPage({ params }: PageProps<"/roster/[id]">
             <p className="section-title">Record</p>
             <p className="mt-1 font-mono text-3xl font-bold tabular-nums">{formatRecord(record)}</p>
             <p className="mt-1 text-xs text-ink-500">
-              From {record.matches} played match{record.matches === 1 ? "" : "es"}. Booked matches do not count.
+              {record.matches} match{record.matches === 1 ? "" : "es"}
             </p>
           </div>
 
@@ -117,10 +117,7 @@ export default async function WrestlerPage({ params }: PageProps<"/roster/[id]">
           <section className="card p-4">
             <p className="section-title mb-3">Contracts</p>
             {active.length === 0 && past.length === 0 && (
-              <p className="text-sm text-ink-500">
-                Free agent. They can still be booked on any card — a contract governs roster
-                membership, not eligibility.
-              </p>
+              <p className="text-sm text-ink-500">Free agent.</p>
             )}
             <ul className="space-y-2">
               {active.map((contract) => {
@@ -234,9 +231,6 @@ export default async function WrestlerPage({ params }: PageProps<"/roster/[id]">
           {opponents.length > 0 && (
             <section className="card p-4">
               <p className="section-title mb-3">Rivalries</p>
-              <p className="mb-3 text-xs text-ink-500">
-                Derived from match history — there is nothing to declare or maintain.
-              </p>
               <ul className="space-y-1.5">
                 {opponents.map((opponent) => (
                   <li key={opponent.id}>

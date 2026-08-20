@@ -65,7 +65,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 px-4 pt-4 pb-28 lg:px-8 lg:pt-8 lg:pb-12">{children}</main>
+          <main className="min-w-0 flex-1 px-4 pt-4 pb-28 lg:px-8 lg:pt-10 lg:pb-16">
+            <div className="mx-auto w-full max-w-5xl">{children}</div>
+          </main>
 
           {/* Thumb-reachable tabs. */}
           <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-800 bg-ink-900/95 pb-safe backdrop-blur lg:hidden">

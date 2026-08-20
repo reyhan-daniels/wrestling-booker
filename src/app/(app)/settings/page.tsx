@@ -30,7 +30,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <PageHeader title="Settings" subtitle="One world is one save." />
+      <PageHeader title="Settings" />
 
       <section className="card mb-4 p-4">
         <p className="section-title mb-3">This world</p>

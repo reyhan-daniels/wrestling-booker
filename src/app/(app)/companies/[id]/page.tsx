@@ -89,9 +89,7 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
         <section className="card p-4">
           <p className="section-title mb-3">Weekly series</p>
           {company.series.length === 0 ? (
-            <p className="text-sm text-ink-500">
-              None — that is fine. A company can run special events only.
-            </p>
+            <p className="text-sm text-ink-500">None.</p>
           ) : (
             <ul className="space-y-2">
               {company.series.map((series) => (
@@ -134,10 +132,6 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
                   <input id="startsOn" type="date" name="startsOn" required defaultValue={todayISO()} className="field" />
                 </div>
               </div>
-              <p className="text-xs text-ink-500">
-                Every future episode is projected onto the calendar from this date. Nothing is
-                created until you book it.
-              </p>
               <button type="submit" className="btn-primary w-full">Add series</button>
             </form>
           </details>
@@ -146,7 +140,7 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
         <section className="card p-4 lg:col-span-2">
           <p className="section-title mb-3">Roster ({company.contracts.length})</p>
           {company.contracts.length === 0 ? (
-            <Empty>Nobody under contract. Add contracts from a wrestler&rsquo;s profile.</Empty>
+            <Empty>Nobody under contract.</Empty>
           ) : (
             <ul className="grid gap-1.5 sm:grid-cols-2">
               {company.contracts.map((contract) => (
@@ -214,9 +208,6 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
             <form action={deleteCompany} className="mt-6">
               <input type="hidden" name="id" value={id} />
               <button type="submit" className="btn-danger">Delete company</button>
-              <p className="mt-2 text-xs text-ink-500">
-                Blocked once the company has played shows — that is permanent history.
-              </p>
             </form>
           </details>
         </section>

@@ -20,7 +20,6 @@ export default async function CompaniesPage() {
     <div>
       <PageHeader
         title="Companies"
-        subtitle="A company employs wrestlers; it never owns them."
         action={<Link href="/companies/new" className="btn-primary">New</Link>}
       />
 
@@ -30,7 +29,7 @@ export default async function CompaniesPage() {
           <Link href="/companies/new" className="text-plan-300 underline">Create one.</Link>
         </Empty>
       ) : (
-        <ul className="grid gap-2 sm:grid-cols-2">
+        <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {companies.map((company) => (
             <li key={company.id} className="card p-4">
               <Link href={`/companies/${company.id}`} className="font-semibold hover:text-plan-300">

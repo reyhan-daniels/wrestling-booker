@@ -27,10 +27,6 @@ export default async function EditWrestlerPage({ params }: PageProps<"/roster/[i
         <button type="submit" className="btn-danger w-full">
           Delete wrestler
         </button>
-        <p className="mt-2 text-xs text-ink-500">
-          Only possible while they have never appeared on a played show. Otherwise retire them —
-          history cannot be edited.
-        </p>
       </form>
     </div>
   );

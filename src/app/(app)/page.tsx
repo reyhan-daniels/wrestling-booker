@@ -43,7 +43,7 @@ export default async function HomePage() {
   const [wrestlerCount, companyCount, playedCount] = counts;
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div>
       <PageHeader
         title={world.name}
         subtitle={`${wrestlerCount} wrestlers · ${companyCount} companies · ${playedCount} shows played`}
@@ -53,9 +53,6 @@ export default async function HomePage() {
       {expired.length > 0 && (
         <section className="card mb-4 border-played-500/30 bg-played-500/5 p-4">
           <p className="section-title text-played-300">Needs your attention</p>
-          <p className="mt-1 mb-3 text-xs text-ink-400">
-            These expiry dates have passed. Nothing has changed — a flag is a prompt, never an event.
-          </p>
           <ul className="space-y-2">
             {expired.map((contract) => (
               <li key={contract.id} className="rounded-lg border border-ink-700 bg-ink-900 p-3">
@@ -98,7 +95,7 @@ export default async function HomePage() {
         <section className="card p-4">
           <p className="section-title mb-3">Ready to play</p>
           {due.length === 0 ? (
-            <p className="text-sm text-ink-500">Nothing waiting. Time only moves when you act.</p>
+            <p className="text-sm text-ink-500">Nothing waiting.</p>
           ) : (
             <ul className="space-y-2">
               {due.map((show) => (
@@ -145,9 +142,7 @@ export default async function HomePage() {
         <section className="card p-4">
           <p className="section-title mb-3">Champions</p>
           {champions.length === 0 ? (
-            <p className="text-sm text-ink-500">
-              No reigns yet. Book a title match and play the show — the lineage writes itself.
-            </p>
+            <p className="text-sm text-ink-500">No champions yet.</p>
           ) : (
             <ul className="space-y-1.5">
               {champions.map((reign) => (

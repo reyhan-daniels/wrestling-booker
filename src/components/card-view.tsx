@@ -171,7 +171,7 @@ export function CardView({
 
       {segments.length === 0 && (
         <div className="card border-dashed p-6 text-center text-sm text-ink-500">
-          Nothing booked yet. Add the first segment.
+          Nothing booked yet.
         </div>
       )}
 

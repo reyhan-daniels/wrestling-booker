@@ -43,9 +43,7 @@ export default async function TitlePage({ params }: PageProps<"/titles/[id]">) {
             </p>
           </>
         ) : (
-          <p className="mt-1 text-sm text-ink-400">
-            Vacant. The first reign opens when a title match for this belt is played.
-          </p>
+          <p className="mt-1 text-sm text-ink-400">Vacant</p>
         )}
       </div>
 
@@ -68,10 +66,7 @@ export default async function TitlePage({ params }: PageProps<"/titles/[id]">) {
       <section className="card p-4">
         <p className="section-title mb-3">Lineage</p>
         {title.reigns.length === 0 ? (
-          <Empty>
-            No reigns yet. Book a match for this title, then play the show — the lineage writes
-            itself.
-          </Empty>
+          <Empty>No reigns yet.</Empty>
         ) : (
           <ol className="space-y-2">
             {title.reigns.map((reign) => (
@@ -140,9 +135,6 @@ export default async function TitlePage({ params }: PageProps<"/titles/[id]">) {
           <form action={deleteTitle} className="mt-6">
             <input type="hidden" name="id" value={id} />
             <button type="submit" className="btn-danger">Delete title</button>
-            <p className="mt-2 text-xs text-ink-500">
-              Only while it has no reigns. A lineage is history and cannot be erased.
-            </p>
           </form>
         </details>
       </section>

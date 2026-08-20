@@ -60,6 +60,7 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
       name: wrestler.name,
       companies: wrestler.contracts.map((c) => c.company.abbreviation ?? c.company.name),
       isRetired: wrestler.status === "RETIRED",
+      align: wrestler.align,
       onCard: wrestler.contracts.some((c) => companyIds.includes(c.companyId)),
     }))
     .sort((a, b) => Number(b.onCard) - Number(a.onCard) || a.name.localeCompare(b.name));
@@ -107,15 +108,7 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
         action={<StateChip isFinalized={show.isFinalized} />}
       />
 
-      {show.isFinalized ? (
-        <div className="card mb-4 border-played-500/30 bg-played-500/5 p-4">
-          <p className="text-sm font-semibold text-played-300">This show has been played.</p>
-          <p className="mt-1 text-xs text-ink-400">
-            The past is permanent — the card and its results can no longer be changed. Everything
-            derived from it moves forward only.
-          </p>
-        </div>
-      ) : (
+      {!show.isFinalized && (
         <div className="mb-4 flex gap-2">
           <Link href={`/shows/${id}/play`} className="btn-gold flex-1">
             Play this show →
@@ -141,12 +134,12 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
       <section className="card mt-4 p-4">
         <details>
           <summary className="section-title cursor-pointer">
-            {show.isFinalized ? "Show details" : "Show details & danger zone"}
+            Show details
           </summary>
 
           {show.isFinalized ? (
             <p className="mt-3 text-sm text-ink-500">
-              {matchCount} match{matchCount === 1 ? "" : "es"} on a played card. Nothing here is editable.
+              {matchCount} match{matchCount === 1 ? "" : "es"}.
             </p>
           ) : (
             <>
@@ -199,9 +192,6 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
                   <input name="name" required defaultValue={`${show.name} (copy)`} className="field" />
                   <input type="date" name="date" defaultValue={toISODate(show.date)} className="field" />
                 </div>
-                <p className="text-xs text-ink-500">
-                  Participants and stipulations come across; results never do.
-                </p>
                 <button type="submit" className="btn-ghost">Duplicate show</button>
               </form>
 

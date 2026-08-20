@@ -20,7 +20,7 @@ export default async function NewShowPage({ searchParams }: PageProps<"/shows/ne
   return (
     <div className="mx-auto max-w-2xl">
       <BackLink href="/calendar">Calendar</BackLink>
-      <PageHeader title="New show" subtitle="A special event, or any standalone card." />
+      <PageHeader title="New show" />
 
       {companies.length === 0 ? (
         <Empty>Create a company first — a show has to belong to at least one.</Empty>
@@ -44,9 +44,6 @@ export default async function NewShowPage({ searchParams }: PageProps<"/shows/ne
 
           <div>
             <span className="label">Company</span>
-            <p className="mb-2 text-xs text-ink-500">
-              Pick more than one for a joint or co-promoted event.
-            </p>
             <ul className="space-y-1.5">
               {companies.map((company) => (
                 <li key={company.id}>
@@ -71,9 +68,6 @@ export default async function NewShowPage({ searchParams }: PageProps<"/shows/ne
           </div>
 
           <button type="submit" className="btn-primary w-full">Create show</button>
-          <p className="text-xs text-ink-500">
-            Book it as far ahead as you like. Nothing counts until you play it.
-          </p>
         </form>
       )}
     </div>

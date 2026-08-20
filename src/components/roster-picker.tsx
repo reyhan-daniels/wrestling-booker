@@ -8,6 +8,7 @@ export type PickableWrestler = {
   name: string;
   companies: string[];
   isRetired: boolean;
+  align?: string;
 };
 
 /**
@@ -28,17 +29,32 @@ export function RosterPicker({
 }) {
   const [query, setQuery] = useState("");
   const [showRetired, setShowRetired] = useState(false);
+  const [promotion, setPromotion] = useState<string | null>(null);
+  const [alignment, setAlignment] = useState<string | null>(null);
   const { open } = usePeek();
 
   const byId = useMemo(() => new Map(wrestlers.map((w) => [w.id, w])), [wrestlers]);
+
+  // Filter options come from the roster itself, so they always match what is
+  // actually in the world.
+  const promotions = useMemo(
+    () => [...new Set(wrestlers.flatMap((w) => w.companies))].sort(),
+    [wrestlers],
+  );
+  const alignments = useMemo(
+    () => [...new Set(wrestlers.map((w) => w.align).filter(Boolean))] as string[],
+    [wrestlers],
+  );
 
   const matches = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return wrestlers
       .filter((w) => (showRetired || !w.isRetired) && !value.includes(w.id))
+      .filter((w) => (promotion ? w.companies.includes(promotion) : true))
+      .filter((w) => (alignment ? w.align === alignment : true))
       .filter((w) => (needle ? w.name.toLowerCase().includes(needle) : true))
-      .slice(0, 40);
-  }, [wrestlers, query, value, showRetired]);
+      .slice(0, 60);
+  }, [wrestlers, query, value, showRetired, promotion, alignment]);
 
   return (
     <div>
@@ -95,7 +111,44 @@ export function RosterPicker({
         className="field"
       />
 
-      <div className="mt-2 max-h-56 overflow-y-auto rounded-lg border border-ink-800">
+      {(promotions.length > 1 || alignments.length > 1) && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {promotions.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => setPromotion(null)}
+                className={promotion === null ? "chip-plan" : "chip-muted"}
+              >
+                All
+              </button>
+              {promotions.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setPromotion(promotion === name ? null : name)}
+                  className={promotion === name ? "chip-plan" : "chip-muted"}
+                >
+                  {name}
+                </button>
+              ))}
+            </>
+          )}
+          {alignments.length > 1 &&
+            alignments.map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setAlignment(alignment === value ? null : value)}
+                className={alignment === value ? "chip-played" : "chip-muted"}
+              >
+                {value.toLowerCase()}
+              </button>
+            ))}
+        </div>
+      )}
+
+      <div className="mt-2 max-h-64 overflow-y-auto rounded-lg border border-ink-800">
         {matches.length === 0 ? (
           <p className="p-3 text-sm text-ink-500">No matching wrestlers.</p>
         ) : (
