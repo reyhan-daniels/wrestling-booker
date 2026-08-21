@@ -235,7 +235,7 @@ const ROSTER: Person[] = [
     align: "HEEL", companies: [STARDOM] },
   { name: "Utami Hayashishita", nickname: "The Red Queen", height: "5'5\"", weight: "143 lbs",
     align: "FACE", companies: [STARDOM] },
-  { name: "Miu Watanabe", nickname: "The Power Princess", height: "5'3\"", weight: "154 lbs",
+  { name: "Miu Watanabe", nickname: "The Power Princess", height: "5'3\"", weight: "120 lbs",
     align: "FACE", companies: [STARDOM] }, // estimated
   { name: "Yuki Arai", height: "5'5\"", weight: "119 lbs", align: "FACE", companies: [STARDOM] }, // estimated
   { name: "Yuki Kamifuku", nickname: "Kamiyu", height: "5'8\"", weight: "117 lbs",
