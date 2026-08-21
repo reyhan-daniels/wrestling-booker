@@ -47,12 +47,17 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
                 <span className="text-played-400"> Booker</span>
               </span>
             </Link>
+            {/* Named for what it does. It used to show only the world name,
+                which read as a label rather than somewhere you could go. */}
             <Link
               href="/settings"
-              className="mb-5 flex items-center gap-2 rounded-[3px] border border-ink-800 bg-ink-850 px-2.5 py-2 text-ink-400 hover:border-ink-700 hover:text-ink-200"
+              className="mb-5 flex items-center gap-2.5 rounded-[3px] border border-ink-800 bg-ink-850 px-2.5 py-2 text-ink-400 hover:border-ink-700 hover:text-ink-200"
             >
-              <IconSettings className="size-3.5" />
-              <span className="display truncate text-[11px] tracking-widest">{world.name}</span>
+              <IconSettings className="size-4 shrink-0" />
+              <span className="min-w-0">
+                <span className="display block text-[11px] tracking-widest">Settings</span>
+                <span className="block truncate text-[11px] text-ink-500">{world.name}</span>
+              </span>
             </Link>
             <nav className="flex flex-col gap-1">
               {NAV.map(({ href, label, Icon }) => (
@@ -76,13 +81,19 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 border-b border-ink-800 bg-ink-950/90 pt-safe backdrop-blur lg:hidden">
-            <div className="flex items-center justify-between px-4 py-3">
-              <Link href="/" className="display text-base font-bold tracking-wide">
-                Wrestling<span className="text-played-400"> Booker</span>
+            <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+              <Link href="/" className="min-w-0">
+                <span className="display block text-base font-bold tracking-wide">
+                  Wrestling<span className="text-played-400"> Booker</span>
+                </span>
+                <span className="block truncate text-[11px] text-ink-500">{world.name}</span>
               </Link>
-              <Link href="/settings" className="flex items-center gap-1.5 text-ink-500">
+              <Link
+                href="/settings"
+                className="flex shrink-0 items-center gap-1.5 rounded-[3px] border border-ink-800 bg-ink-850 px-2.5 py-1.5 text-ink-400"
+              >
                 <IconSettings className="size-3.5" />
-                <span className="display truncate text-[11px] tracking-widest">{world.name}</span>
+                <span className="display text-[11px] tracking-widest">Settings</span>
               </Link>
             </div>
           </header>
