@@ -3,11 +3,12 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { CADENCE_LABELS } from "@/lib/constants";
 import { getCurrentChampions } from "@/lib/derive";
-import { createSeries, createTitle, deleteCompany, deleteSeries, updateCompany } from "@/lib/actions/companies";
+import { createSeries, createTitle, deleteCompany, deleteSeries, updateCompany, updateSeries } from "@/lib/actions/companies";
 import { BackLink, Empty, PageHeader, StateChip } from "@/components/ui";
 import { PeekName } from "@/components/peek/peek-triggers";
 import { SortableTitles } from "@/components/sortable-titles";
-import { formatDate, formatDuration, todayISO, weekdayName } from "@/lib/dates";
+import { ColorPicker } from "@/components/color-picker";
+import { formatDate, formatDuration, toISODate, todayISO, weekdayName } from "@/lib/dates";
 
 export default async function CompanyPage({ params }: PageProps<"/companies/[id]">) {
   const { id } = await params;
@@ -87,12 +88,17 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
           ) : (
             <ul className="space-y-2">
               {company.series.map((series) => (
-                <li key={series.id} className="rounded-lg border border-ink-800 bg-ink-900 p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium">{series.name}</span>
+                <li key={series.id} className="rounded-[3px] border border-ink-800 bg-ink-900 p-3">
+                  <div className="flex items-center gap-2">
+                    <span
+                      aria-hidden
+                      className="size-3 shrink-0 rounded-[2px] border border-ink-700"
+                      style={{ background: series.color ?? company.color ?? "transparent" }}
+                    />
+                    <span className="name min-w-0 flex-1 truncate">{series.name}</span>
                     <form action={deleteSeries}>
                       <input type="hidden" name="id" value={series.id} />
-                      <button type="submit" className="text-xs text-ink-600 hover:text-danger-400">
+                      <button type="submit" className="display text-[10px] tracking-widest text-ink-600 hover:text-danger-400">
                         Remove
                       </button>
                     </form>
@@ -102,6 +108,26 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
                     {formatDate(series.startsOn)}
                     {series.endedOn ? ` · ended ${formatDate(series.endedOn)}` : ""}
                   </p>
+
+                  <details className="mt-2">
+                    <summary className="display cursor-pointer text-[10px] tracking-widest text-ink-500">
+                      Edit
+                    </summary>
+                    <form action={updateSeries} className="mt-3 space-y-3">
+                      <input type="hidden" name="id" value={series.id} />
+                      <input name="name" required defaultValue={series.name} className="field" />
+                      <div className="grid grid-cols-2 gap-3">
+                        <select name="cadence" defaultValue={series.cadence} className="field">
+                          {Object.entries(CADENCE_LABELS).map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                          ))}
+                        </select>
+                        <input type="date" name="startsOn" required defaultValue={toISODate(series.startsOn)} className="field" />
+                      </div>
+                      <ColorPicker name="color" defaultValue={series.color} label="Calendar colour" />
+                      <button type="submit" className="btn-primary w-full">Save series</button>
+                    </form>
+                  </details>
                 </li>
               ))}
             </ul>
@@ -126,15 +152,26 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
                   <input id="startsOn" type="date" name="startsOn" required defaultValue={todayISO()} className="field" />
                 </div>
               </div>
+              <ColorPicker name="color" label="Calendar colour" />
               <button type="submit" className="btn-primary w-full">Add series</button>
             </form>
           </details>
         </section>
 
         <section className="card p-4 lg:col-span-2">
-          <p className="section-title mb-3">Roster ({company.contracts.length})</p>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="section-title">Roster ({company.contracts.length})</p>
+            <Link href={`/roster/new?company=${id}`} className="btn-ghost px-2.5 py-1 text-[11px]">
+              + New wrestler
+            </Link>
+          </div>
           {company.contracts.length === 0 ? (
-            <Empty>Nobody under contract.</Empty>
+            <Empty>
+              Nobody under contract.{" "}
+              <Link href={`/roster/new?company=${id}`} className="text-plan-300">
+                Create the first one.
+              </Link>
+            </Empty>
           ) : (
             <ul className="grid gap-1.5 sm:grid-cols-2">
               {company.contracts.map((contract) => (

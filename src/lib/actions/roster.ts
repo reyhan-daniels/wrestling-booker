@@ -46,6 +46,21 @@ export async function createWrestler(data: FormData) {
     if (photo) {
       await tx.wrestlerPhoto.create({ data: { wrestlerId: created.id, ...photo } });
     }
+
+    const companyIds = list(data, "companyIds");
+    if (companyIds.length) {
+      const preferred = text(data, "primaryCompanyId");
+      const primaryId = preferred && companyIds.includes(preferred) ? preferred : companyIds[0];
+      await tx.contract.createMany({
+        data: companyIds.map((companyId) => ({
+          worldId: world.id,
+          wrestlerId: created.id,
+          companyId,
+          isPrimary: companyId === primaryId,
+        })),
+      });
+    }
+
     return created;
   });
   revalidatePath("/roster");

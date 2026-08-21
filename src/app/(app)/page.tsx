@@ -112,7 +112,7 @@ export default async function HomePage() {
                     {show.companies.map((c) => c.name).join(" × ")} · {show._count.segments} segment
                     {show._count.segments === 1 ? "" : "s"}
                   </p>
-                  <Link href={`/shows/${show.id}/play`} className="btn-gold mt-2 w-full py-1.5 text-xs">
+                  <Link href={`/shows/${show.id}/play`} className="btn-accent mt-2 w-full py-1.5 text-xs">
                     Play →
                   </Link>
                 </li>

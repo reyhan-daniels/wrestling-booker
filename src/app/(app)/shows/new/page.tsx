@@ -3,6 +3,7 @@ import { todayISO } from "@/lib/dates";
 import { getActiveWorld } from "@/lib/world";
 import { createShow } from "@/lib/actions/shows";
 import { BackLink, Empty, PageHeader } from "@/components/ui";
+import { ColorPicker } from "@/components/color-picker";
 
 export const metadata = { title: "New show — Wrestling Booker" };
 
@@ -61,6 +62,8 @@ export default async function NewShowPage({ searchParams }: PageProps<"/shows/ne
               ))}
             </ul>
           </div>
+
+          <ColorPicker name="color" label="Calendar colour" />
 
           <div>
             <label className="label" htmlFor="notes">Notes</label>

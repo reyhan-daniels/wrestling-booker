@@ -75,6 +75,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
             isFinalized: entry.kind === "show" ? entry.isFinalized : false,
             seriesId: entry.seriesId,
             segmentCount: entry.kind === "show" ? entry.segmentCount : 0,
+            color: entry.color,
           }),
         )}
       />
@@ -93,6 +94,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
             return (
               <li
                 key={entry.id}
+                style={entry.color ? { borderLeftColor: entry.color, borderLeftWidth: 3 } : undefined}
                 className={`card p-3 ${entry.kind === "slot" ? "border-dashed bg-transparent" : ""} ${
                   isToday ? "ring-1 ring-plan-500/50" : ""
                 }`}

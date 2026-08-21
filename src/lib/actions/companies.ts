@@ -102,6 +102,7 @@ export async function createSeries(data: FormData) {
       companyId,
       name: requiredText(data, "name", "Name"),
       cadence: cadence in Cadence ? (cadence as Cadence) : Cadence.WEEKLY,
+      color: text(data, "color"),
       startsOn: requiredDate(data, "startsOn", "Start date"),
     },
   });
@@ -117,6 +118,7 @@ export async function updateSeries(data: FormData) {
     data: {
       name: requiredText(data, "name", "Name"),
       cadence: cadence in Cadence ? (cadence as Cadence) : Cadence.WEEKLY,
+      color: text(data, "color"),
       startsOn: requiredDate(data, "startsOn", "Start date"),
       endedOn: date(data, "endedOn"),
     },

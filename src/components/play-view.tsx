@@ -224,7 +224,7 @@ export function PlayView({
               }}
             >
               <input type="hidden" name="showId" value={showId} />
-              <button type="submit" className="btn-gold w-full">
+              <button type="submit" className="btn-accent w-full">
                 Yes, finalize
               </button>
             </form>
@@ -233,7 +233,7 @@ export function PlayView({
             </button>
           </div>
         ) : (
-          <button type="button" onClick={() => setConfirming(true)} className="btn-gold mt-4 w-full">
+          <button type="button" onClick={() => setConfirming(true)} className="btn-accent mt-4 w-full">
             Finalize show
           </button>
         )}

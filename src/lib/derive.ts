@@ -268,6 +268,8 @@ export type CalendarEntry =
       seriesId: string | null;
       isFinalized: boolean;
       segmentCount: number;
+      /** Show colour, else its series', else the owning company's. */
+      color: string | null;
     }
   | {
       kind: "slot";
@@ -278,6 +280,7 @@ export type CalendarEntry =
       name: string;
       companies: { id: string; name: string; color: string | null }[];
       seriesId: string;
+      color: string | null;
     };
 
 function nextSlot(date: Date, cadence: Cadence): Date {
@@ -301,6 +304,7 @@ export async function getCalendar(worldId: string, from: Date, to: Date, company
       },
       include: {
         companies: { select: { id: true, name: true, color: true } },
+        series: { select: { color: true } },
         _count: { select: { segments: true } },
       },
       orderBy: { date: "asc" },
@@ -323,6 +327,7 @@ export async function getCalendar(worldId: string, from: Date, to: Date, company
     seriesId: show.seriesId,
     isFinalized: show.isFinalized,
     segmentCount: show._count.segments,
+    color: show.color ?? show.series?.color ?? show.companies[0]?.color ?? null,
   }));
 
   const taken = new Set(shows.filter((s) => s.seriesId).map((s) => `${s.seriesId}:${toISODate(s.date)}`));
@@ -346,6 +351,7 @@ export async function getCalendar(worldId: string, from: Date, to: Date, company
           name: `${s.name} #${episode}`,
           companies: [s.company],
           seriesId: s.id,
+          color: s.color ?? s.company.color ?? null,
         });
       }
       cursor = nextSlot(cursor, s.cadence);

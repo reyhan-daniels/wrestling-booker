@@ -7,6 +7,7 @@ import { getActiveWorld } from "@/lib/world";
 import { deleteShow, duplicateShow, updateShow } from "@/lib/actions/shows";
 import { BackLink, PageHeader, StateChip } from "@/components/ui";
 import { CardView, type CardSegment } from "@/components/card-view";
+import { ColorPicker } from "@/components/color-picker";
 
 export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
   const { id } = await params;
@@ -110,7 +111,7 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
 
       {!show.isFinalized && (
         <div className="mb-4 flex gap-2">
-          <Link href={`/shows/${id}/play`} className="btn-gold flex-1">
+          <Link href={`/shows/${id}/play`} className="btn-accent flex-1">
             Play this show →
           </Link>
         </div>
@@ -178,6 +179,7 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
                     ))}
                   </ul>
                 </div>
+                <ColorPicker name="color" defaultValue={show.color} label="Calendar colour" />
                 <div>
                   <label className="label" htmlFor="notes">Notes</label>
                   <textarea id="notes" name="notes" rows={2} defaultValue={show.notes ?? ""} className="field" />

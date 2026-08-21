@@ -24,10 +24,10 @@
   --color-plan-400: #3b82f6;
   --color-plan-300: #7dabfb;
 
-  --color-played-600: #a97a10;
-  --color-played-500: #c9971f;
-  --color-played-400: #e0b23c;
-  --color-played-300: #f2ce6b;
+  --color-played-600: #6f7b8d;
+  --color-played-500: #9aa6b8;
+  --color-played-400: #c3ccd9;
+  --color-played-300: #e4eaf2;
 
   --color-danger-500: #b91c1c;
   --color-danger-400: #ef4444;
@@ -109,8 +109,8 @@ body {
   .btn-primary {
     @apply btn bg-plan-500 text-white hover:bg-plan-400;
   }
-  .btn-gold {
-    @apply btn bg-played-500 text-ink-950 hover:bg-played-400;
+  .btn-accent {
+    @apply btn bg-played-400 text-ink-950 hover:bg-played-300;
   }
   .btn-ghost {
     @apply btn border border-ink-700 bg-ink-800 text-ink-200 hover:border-ink-600 hover:bg-ink-700 hover:text-ink-100;

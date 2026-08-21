@@ -217,6 +217,8 @@ model WeeklySeries {
   company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   name      String
   cadence   Cadence   @default(WEEKLY)
+  /// Tints every entry for this series on the calendar.
+  color     String?
   /// Anchor date. Day-of-week and every future slot are derived from this.
   startsOn  DateTime  @db.Date
   /// Set to stop projecting future episodes. Past episodes remain.
@@ -251,6 +253,8 @@ model Show {
 
   venue String?
   notes String?
+  /// Overrides the series (and company) colour on the calendar.
+  color String?
 
   /// The one-way door. Set by *playing* the show; the boundary between an
   /// editable plan and immutable history.

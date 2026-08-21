@@ -12,6 +12,7 @@ export type GridEntry = {
   isFinalized: boolean;
   seriesId: string | null;
   segmentCount: number;
+  color: string | null;
 };
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -84,17 +85,27 @@ export function MonthGrid({
                       key={entry.id}
                       href={`/shows/${entry.id}`}
                       title={`${entry.name} — ${entry.companies.map((c) => c.name).join(" × ")}`}
-                      className={`block truncate rounded px-1.5 py-1 text-[11px] leading-tight ${
-                        entry.isFinalized
-                          ? "bg-played-500/15 text-played-300 hover:bg-played-500/25"
-                          : "bg-plan-500/15 text-plan-200 hover:bg-plan-500/25"
+                      // A played show gets a fuller wash and an inset ring, so
+                      // the locked/plan distinction survives any custom colour.
+                      style={
+                        entry.color
+                          ? {
+                              backgroundColor: `${entry.color}${entry.isFinalized ? "44" : "22"}`,
+                              borderLeftColor: entry.color,
+                              color: entry.color,
+                            }
+                          : undefined
+                      }
+                      className={`block truncate rounded-[2px] border-l-[3px] px-1.5 py-1 text-[11px] leading-tight transition-opacity hover:opacity-80 ${
+                        entry.color
+                          ? entry.isFinalized
+                            ? "brightness-125 ring-1 ring-inset ring-white/20"
+                            : "brightness-110"
+                          : entry.isFinalized
+                            ? "border-l-played-400 bg-played-500/20 text-played-300 ring-1 ring-inset ring-white/10"
+                            : "border-l-plan-500 bg-plan-500/15 text-plan-200"
                       }`}
                     >
-                      <span
-                        aria-hidden
-                        className="mr-1 inline-block size-1.5 rounded-full align-middle"
-                        style={{ background: entry.companies[0]?.color ?? "currentColor" }}
-                      />
                       {entry.name}
                     </Link>
                   ) : (
@@ -104,7 +115,8 @@ export function MonthGrid({
                       <button
                         type="submit"
                         title={`Book ${entry.name}`}
-                        className="block w-full truncate rounded border border-dashed border-ink-600 px-1.5 py-1 text-left text-[11px] leading-tight text-ink-500 hover:border-plan-500/60 hover:text-plan-300"
+                        style={entry.color ? { borderColor: `${entry.color}66`, color: `${entry.color}bb` } : undefined}
+                        className="block w-full truncate rounded-[2px] border border-dashed border-ink-600 px-1.5 py-1 text-left text-[11px] leading-tight text-ink-500 hover:opacity-80"
                       >
                         {entry.name}
                       </button>

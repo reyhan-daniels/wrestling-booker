@@ -31,10 +31,15 @@ export function WrestlerForm({
   action,
   wrestler,
   submitLabel,
+  companies = [],
+  preselectedCompanyId,
 }: {
   action: (data: FormData) => Promise<void>;
   wrestler?: Wrestler;
   submitLabel: string;
+  /** Offered only while creating; an existing wrestler manages deals on their profile. */
+  companies?: { id: string; name: string; abbreviation: string | null }[];
+  preselectedCompanyId?: string;
 }) {
   // Signature moves are a collection, capped at five — never a comma-joined
   // string typed into one box.
@@ -47,6 +52,23 @@ export function WrestlerForm({
   const [preview, setPreview] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [dropExisting, setDropExisting] = useState(false);
+
+  // Signing happens at the same moment as creating, rather than being a
+  // second trip to the profile page.
+  const [signedTo, setSignedTo] = useState<string[]>(
+    preselectedCompanyId ? [preselectedCompanyId] : [],
+  );
+  const [primary, setPrimary] = useState<string | null>(preselectedCompanyId ?? null);
+
+  function toggleCompany(companyId: string) {
+    setSignedTo((current) => {
+      const next = current.includes(companyId)
+        ? current.filter((id) => id !== companyId)
+        : [...current, companyId];
+      setPrimary((was) => (next.includes(was ?? "") ? was : (next[0] ?? null)));
+      return next;
+    });
+  }
 
   // Object URLs are only freed when we let go of them.
   useEffect(() => {
@@ -124,6 +146,52 @@ export function WrestlerForm({
           </div>
         </div>
       </div>
+
+      {!wrestler && companies.length > 0 && (
+        <div className="card p-4">
+          <p className="section-title mb-3">Roster</p>
+          <ul className="space-y-1.5">
+            {companies.map((company) => {
+              const signed = signedTo.includes(company.id);
+              return (
+                <li key={company.id}>
+                  <label
+                    className={`flex cursor-pointer items-center gap-2.5 rounded-[3px] border px-3 py-2.5 text-sm transition-colors ${
+                      signed ? "border-plan-500/60 bg-plan-500/10" : "border-ink-800 bg-ink-900"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      name="companyIds"
+                      value={company.id}
+                      checked={signed}
+                      onChange={() => toggleCompany(company.id)}
+                      className="size-4"
+                    />
+                    <span className="min-w-0 flex-1 truncate">{company.name}</span>
+                    {signed && signedTo.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setPrimary(company.id);
+                        }}
+                        className={primary === company.id ? "chip-plan" : "chip-muted"}
+                      >
+                        {primary === company.id ? "Primary" : "Make primary"}
+                      </button>
+                    )}
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+          {primary && <input type="hidden" name="primaryCompanyId" value={primary} />}
+          <p className="mt-2 text-xs text-ink-500">
+            Optional — an unsigned wrestler can still be booked on any card.
+          </p>
+        </div>
+      )}
 
       <div className="card p-4">
         <p className="section-title mb-3">Photo</p>

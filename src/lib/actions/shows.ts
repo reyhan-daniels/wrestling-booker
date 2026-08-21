@@ -45,6 +45,7 @@ export async function createShow(data: FormData) {
       date: requiredDate(data, "date", "Date"),
       venue: text(data, "venue"),
       notes: text(data, "notes"),
+      color: text(data, "color"),
       seriesId: text(data, "seriesId"),
       companies: { connect: companyIds.map((id) => ({ id })) },
     },
@@ -96,6 +97,7 @@ export async function updateShow(data: FormData) {
       date: requiredDate(data, "date", "Date"),
       venue: text(data, "venue"),
       notes: text(data, "notes"),
+      color: text(data, "color"),
       companies: { set: companyIds.map((companyId) => ({ id: companyId })) },
     },
   });
