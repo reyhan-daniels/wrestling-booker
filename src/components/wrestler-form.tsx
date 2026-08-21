@@ -33,6 +33,7 @@ export function WrestlerForm({
   submitLabel,
   companies = [],
   preselectedCompanyId,
+  photosEnabled = true,
 }: {
   action: (data: FormData) => Promise<void>;
   wrestler?: Wrestler;
@@ -40,6 +41,8 @@ export function WrestlerForm({
   /** Offered only while creating; an existing wrestler manages deals on their profile. */
   companies?: { id: string; name: string; abbreviation: string | null }[];
   preselectedCompanyId?: string;
+  /** Off hides the whole portrait section without deleting anything. */
+  photosEnabled?: boolean;
 }) {
   // A portrait rides along with the rest of the form, so it can be set at the
   // moment a wrestler is created rather than only after they exist.
@@ -195,52 +198,54 @@ export function WrestlerForm({
         </div>
       )}
 
-      <div className="card p-4">
-        <p className="section-title mb-3">Photo</p>
-        <div className="flex items-start gap-4">
-          <div className="size-24 shrink-0 overflow-hidden rounded-lg border border-ink-700 bg-ink-900">
-            {shown ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={shown} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full items-center justify-center text-[11px] text-ink-600">
-                No photo
-              </div>
-            )}
-          </div>
+      {photosEnabled && (
+        <div className="card p-4">
+          <p className="section-title mb-3">Photo</p>
+          <div className="flex items-start gap-4">
+            <div className="size-24 shrink-0 overflow-hidden rounded-lg border border-ink-700 bg-ink-900">
+              {shown ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={shown} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-[11px] text-ink-600">
+                  No photo
+                </div>
+              )}
+            </div>
 
-          <div className="min-w-0 flex-1">
-            <label className="btn-ghost cursor-pointer">
-              {shown ? "Choose a different image" : "Choose an image"}
-              <input
-                type="file"
-                name="photo"
-                accept={PHOTO_ACCEPT}
-                className="hidden"
-                onChange={(event) => chooseFile(event.target.files?.[0] ?? null)}
-              />
-            </label>
-            <p className="mt-2 text-xs text-ink-500">{describePhotoLimit()}</p>
-            {photoError && <p className="mt-1 text-xs text-danger-400">{photoError}</p>}
-
-            {wrestler?.hasPhoto && (
-              <label className="mt-3 flex items-center gap-2 text-xs text-ink-400">
+            <div className="min-w-0 flex-1">
+              <label className="btn-ghost cursor-pointer">
+                {shown ? "Choose a different image" : "Choose an image"}
                 <input
-                  type="checkbox"
-                  name="removePhoto"
-                  checked={dropExisting}
-                  onChange={(event) => {
-                    setDropExisting(event.target.checked);
-                    if (event.target.checked) chooseFile(null);
-                  }}
-                  className="size-3.5"
+                  type="file"
+                  name="photo"
+                  accept={PHOTO_ACCEPT}
+                  className="hidden"
+                  onChange={(event) => chooseFile(event.target.files?.[0] ?? null)}
                 />
-                Remove the current photo
               </label>
-            )}
+              <p className="mt-2 text-xs text-ink-500">{describePhotoLimit()}</p>
+              {photoError && <p className="mt-1 text-xs text-danger-400">{photoError}</p>}
+
+              {wrestler?.hasPhoto && (
+                <label className="mt-3 flex items-center gap-2 text-xs text-ink-400">
+                  <input
+                    type="checkbox"
+                    name="removePhoto"
+                    checked={dropExisting}
+                    onChange={(event) => {
+                      setDropExisting(event.target.checked);
+                      if (event.target.checked) chooseFile(null);
+                    }}
+                    className="size-3.5"
+                  />
+                  Remove the current photo
+                </label>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="card p-4">
         <label className="label" htmlFor="notes">Notes</label>

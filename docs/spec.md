@@ -104,6 +104,9 @@ Fields:
 - **Gender** — Men / Women / Other, or left unset. Recorded for filtering the
   roster; never inferred from a name, and never required.
 - **Photo** — a single portrait image. (One image per wrestler, not a set.)
+  Optional as a *feature*: a world can turn portraits off entirely from
+  Settings, which hides every avatar and upload control without deleting a
+  single byte, so the switch is reversible.
 - **Status** — active / retired. Drives who appears in roster-pickers when booking.
 
 **Derived, never stored:** win/loss record, rivalries. Both are computed from match

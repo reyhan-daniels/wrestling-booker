@@ -115,7 +115,7 @@ export default async function RosterPage({ searchParams }: PageProps<"/roster">)
                 <Avatar
                   id={wrestler.id}
                   name={wrestler.name}
-                  hasPhoto={Boolean(wrestler.photo)}
+                  hasPhoto={world.photosEnabled && Boolean(wrestler.photo)}
                   size={44}
                 />
                 <div className="min-w-0 flex-1">

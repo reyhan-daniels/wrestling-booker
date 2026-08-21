@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { WrestlerForm } from "@/components/wrestler-form";
 import { deleteWrestler, updateWrestler } from "@/lib/actions/roster";
+import { getActiveWorld } from "@/lib/world";
 import { BackLink, PageHeader } from "@/components/ui";
 
 export default async function EditWrestlerPage({ params }: PageProps<"/roster/[id]/edit">) {
@@ -12,6 +13,8 @@ export default async function EditWrestlerPage({ params }: PageProps<"/roster/[i
   });
   if (!wrestler) notFound();
 
+  const world = await getActiveWorld();
+
   return (
     <div className="mx-auto max-w-2xl">
       <BackLink href={`/roster/${id}`}>{wrestler.name}</BackLink>
@@ -20,6 +23,7 @@ export default async function EditWrestlerPage({ params }: PageProps<"/roster/[i
         action={updateWrestler}
         wrestler={{ ...wrestler, hasPhoto: Boolean(wrestler.photo) }}
         submitLabel="Save changes"
+        photosEnabled={world.photosEnabled}
       />
 
       <form action={deleteWrestler} className="mt-8">

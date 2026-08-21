@@ -28,6 +28,11 @@ model World {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  /// Portraits are a feature of the world, not a hard requirement. Turning
+  /// this off hides every avatar and upload control; the bytes already stored
+  /// are left alone, so it is reversible.
+  photosEnabled Boolean @default(true)
+
   wrestlers Wrestler[]
   companies Company[]
   contracts Contract[]

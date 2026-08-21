@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { formatDate } from "@/lib/dates";
 import { formatRecord, getUnitMatches, unitRecordFrom } from "@/lib/derive";
 import { unitKind } from "@/lib/constants";
+import { getActiveWorld } from "@/lib/world";
 import { BackLink, Empty, PageHeader } from "@/components/ui";
 import { PeekName, PeekShowButton } from "@/components/peek/peek-triggers";
 import { Avatar } from "@/components/avatar";
@@ -22,6 +23,7 @@ export default async function GroupPage({ params }: PageProps<"/groups/[id]">) {
   });
   if (!group) notFound();
 
+  const world = await getActiveWorld();
   const memberIds = group.members.map((m) => m.id);
   const rows = await getUnitMatches(memberIds);
   const record = unitRecordFrom(rows, memberIds);
@@ -57,7 +59,7 @@ export default async function GroupPage({ params }: PageProps<"/groups/[id]">) {
                   <Avatar
                     id={member.id}
                     name={member.name}
-                    hasPhoto={Boolean(member.photo)}
+                    hasPhoto={world.photosEnabled && Boolean(member.photo)}
                     size={32}
                   />
                   <Link href={`/roster/${member.id}`} className="min-w-0 flex-1 truncate text-sm hover:text-plan-300">

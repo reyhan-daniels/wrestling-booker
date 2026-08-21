@@ -30,6 +30,7 @@ export default async function NewWrestlerPage({ searchParams }: PageProps<"/rost
         submitLabel="Create wrestler"
         companies={companies}
         preselectedCompanyId={from?.id}
+        photosEnabled={world.photosEnabled}
       />
     </div>
   );

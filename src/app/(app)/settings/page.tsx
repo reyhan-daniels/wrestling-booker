@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { SESSION_COOKIE } from "@/lib/auth";
 import { formatDate } from "@/lib/dates";
 import { getActiveWorld, listWorlds } from "@/lib/world";
-import { createWorld, renameWorld, switchWorld } from "@/lib/actions/worlds";
+import { createWorld, renameWorld, setPhotosEnabled, switchWorld } from "@/lib/actions/worlds";
 import { PageHeader } from "@/components/ui";
 
 export const metadata = { title: "Settings — Wrestling Booker" };
@@ -18,8 +18,9 @@ export default async function SettingsPage() {
     db.show.count({ where: { worldId: world.id } }),
     db.show.count({ where: { worldId: world.id, isFinalized: true } }),
     db.reign.count({ where: { title: { company: { worldId: world.id } } } }),
+    db.wrestlerPhoto.count({ where: { wrestler: { worldId: world.id } } }),
   ]);
-  const [wrestlers, companies, shows, played, reigns] = counts;
+  const [wrestlers, companies, shows, played, reigns, photoCount] = counts;
 
   async function signOut() {
     "use server";
@@ -54,6 +55,30 @@ export default async function SettingsPage() {
           ))}
         </dl>
         <p className="mt-3 text-xs text-ink-500">Created {formatDate(world.createdAt)}.</p>
+      </section>
+
+      <section className="card mb-4 p-4">
+        <p className="section-title mb-3">Features</p>
+        <form action={setPhotosEnabled} className="flex items-start justify-between gap-4">
+          <input type="hidden" name="id" value={world.id} />
+          <input type="hidden" name="enabled" value={world.photosEnabled ? "" : "1"} />
+          <div className="min-w-0">
+            <p className="text-sm">Wrestler portraits</p>
+            <p className="mt-1 text-xs text-ink-500">
+              {world.photosEnabled
+                ? "Avatars and upload controls are shown throughout the app."
+                : "Hidden everywhere. Photos already uploaded are kept, not deleted — turn this back on and they reappear."}
+            </p>
+          </div>
+          <button type="submit" className={world.photosEnabled ? "btn-ghost shrink-0" : "btn-primary shrink-0"}>
+            {world.photosEnabled ? "Turn off" : "Turn on"}
+          </button>
+        </form>
+        <p className="mt-3 text-xs text-ink-600">
+          {photoCount === 0
+            ? "No portraits stored."
+            : `${photoCount} portrait${photoCount === 1 ? "" : "s"} stored.`}
+        </p>
       </section>
 
       {worlds.length > 1 && (

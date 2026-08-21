@@ -23,6 +23,18 @@ export async function GET(_request: NextRequest, context: RouteContext<"/api/wre
 
 export async function POST(request: NextRequest, context: RouteContext<"/api/wrestlers/[id]/photo">) {
   const { id } = await context.params;
+
+  // The toggle is presentational for reads — stored photos keep serving — but
+  // it should not quietly accept new ones while the feature is switched off.
+  const wrestler = await db.wrestler.findUnique({
+    where: { id },
+    select: { world: { select: { photosEnabled: true } } },
+  });
+  if (!wrestler) return NextResponse.json({ error: "No such wrestler." }, { status: 404 });
+  if (!wrestler.world.photosEnabled) {
+    return NextResponse.json({ error: "Photos are turned off for this world." }, { status: 409 });
+  }
+
   const form = await request.formData();
   const file = form.get("photo");
 

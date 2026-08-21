@@ -66,7 +66,9 @@ export default async function WrestlerPage({ params }: PageProps<"/roster/[id]">
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-1">
           <div className="card p-4">
-            <PhotoUpload wrestlerId={id} hasPhoto={Boolean(wrestler.photo)} name={wrestler.name} />
+            {world.photosEnabled && (
+              <PhotoUpload wrestlerId={id} hasPhoto={Boolean(wrestler.photo)} name={wrestler.name} />
+            )}
           </div>
 
           <div className="card p-4">
