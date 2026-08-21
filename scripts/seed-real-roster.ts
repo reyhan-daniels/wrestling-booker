@@ -11,12 +11,14 @@
  * Roster membership comes from the user's own table, not from real life —
  * several of these people work elsewhere in reality, and the table wins.
  *
- * Billed height and weight are the English Wikipedia infobox for each
- * wrestler, converted to feet/inches and pounds. Where Wikipedia carried no
- * billed figure the field is left blank rather than guessed; women's weights
- * in particular are frequently not published at all. Alignment is a judgement
- * call about how each person is being presented, and is the field most likely
- * to be stale.
+ * Billed height and weight are the English Wikipedia infobox for each wrestler,
+ * converted to feet/inches and pounds, falling back to the Pro Wrestling Wiki
+ * where Wikipedia carried no figure. The seven entries marked `// estimated`
+ * are not billed anywhere: Tokyo Joshi prints "-" in the weight row for its
+ * whole roster, and WWE no longer bills weights for the women's division.
+ * Those are guesses from build and camera, and are the first thing to correct
+ * if you know better. Alignment is a judgement call about how each person is
+ * being presented, and is the field most likely to be stale.
  */
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
@@ -83,7 +85,7 @@ const ROSTER: Person[] = [
     align: "HEEL", companies: [AEW] },
   { name: "Claudio Castagnoli", nickname: "The Swiss Cyborg", height: "6'5\"", weight: "232 lbs",
     align: "HEEL", companies: [AEW] },
-  { name: "Colten Gunn", weight: "222 lbs", align: "HEEL", companies: [AEW] },
+  { name: "Colten Gunn", height: "6'1\"", weight: "222 lbs", align: "HEEL", companies: [AEW] }, // estimated
   { name: "Dalton Castle", nickname: "The Peacock", height: "5'11\"", weight: "217 lbs",
     align: "FACE", companies: [AEW] },
   { name: "Daniel Garcia", nickname: "Red Death", height: "6'0\"", weight: "187 lbs",
@@ -94,11 +96,11 @@ const ROSTER: Person[] = [
   { name: "Dezmond Xavier", height: "5'9\"", weight: "178 lbs", align: "TWEENER", companies: [AEW] },
   { name: "Eddie Kingston", nickname: "The Mad King", height: "6'1\"", weight: "240 lbs",
     align: "FACE", companies: [AEW] },
-  { name: "El Clon", align: "HEEL", companies: [AEW] },
+  { name: "El Clon", height: "5'9\"", weight: "152 lbs", align: "HEEL", companies: [AEW] },
   { name: "Hechicero", nickname: "El Mago", height: "5'10\"", weight: "229 lbs", align: "HEEL", companies: [AEW] },
   { name: "Jack Perry", nickname: "Scapegoat", height: "5'10\"", weight: "167 lbs",
     align: "HEEL", companies: [AEW] },
-  { name: "Jake Doyle", align: "TWEENER", companies: [AEW] },
+  { name: "Jake Doyle", height: "6'2\"", weight: "262 lbs", align: "TWEENER", companies: [AEW] },
   { name: "Katsuyori Shibata", nickname: "The Wrestler", height: "6'0\"", weight: "209 lbs",
     align: "FACE", companies: [AEW] },
   { name: "Konosuke Takeshita", nickname: "The Alpha", height: "6'2\"", weight: "251 lbs",
@@ -204,7 +206,7 @@ const ROSTER: Person[] = [
     align: "FACE", companies: [NJPW] },
   { name: "Tommy Billington", height: "5'8\"", weight: "180 lbs", align: "TWEENER", companies: [NJPW] },
   { name: "Roderick Strong", height: "5'10\"", weight: "200 lbs", align: "HEEL", companies: [NJPW] },
-  { name: "Steve Borden Jr.", align: "FACE", companies: [NJPW] },
+  { name: "Steve Borden Jr.", height: "6'2\"", weight: "220 lbs", align: "FACE", companies: [NJPW] }, // estimated
   { name: "Kyle O'Reilly", height: "6'0\"", weight: "206 lbs", align: "FACE", companies: [NJPW] },
   { name: "Tommaso Ciampa", nickname: "The Blackheart", height: "5'11\"", weight: "208 lbs",
     align: "HEEL", companies: [NJPW] },
@@ -233,38 +235,43 @@ const ROSTER: Person[] = [
     align: "HEEL", companies: [STARDOM] },
   { name: "Utami Hayashishita", nickname: "The Red Queen", height: "5'5\"", weight: "143 lbs",
     align: "FACE", companies: [STARDOM] },
-  { name: "Miu Watanabe", nickname: "The Power Princess", height: "5'3\"", align: "FACE", companies: [STARDOM] },
-  { name: "Yuki Arai", height: "5'5\"", align: "FACE", companies: [STARDOM] },
+  { name: "Miu Watanabe", nickname: "The Power Princess", height: "5'3\"", weight: "154 lbs",
+    align: "FACE", companies: [STARDOM] }, // estimated
+  { name: "Yuki Arai", height: "5'5\"", weight: "119 lbs", align: "FACE", companies: [STARDOM] }, // estimated
   { name: "Yuki Kamifuku", nickname: "Kamiyu", height: "5'8\"", weight: "117 lbs",
     align: "HEEL", companies: [STARDOM] },
-  { name: "Miyu Yamashita", nickname: "The Pink Striker", height: "5'5\"", align: "FACE", companies: [STARDOM] },
+  { name: "Miyu Yamashita", nickname: "The Pink Striker", height: "5'5\"", weight: "121 lbs",
+    align: "FACE", companies: [STARDOM] }, // estimated
   { name: "Alex Windsor", height: "5'5\"", weight: "139 lbs", align: "TWEENER", companies: [STARDOM] },
   { name: "Athena", nickname: "The Fallen Goddess", height: "5'3\"", weight: "120 lbs",
     align: "HEEL", companies: [STARDOM] },
-  { name: "Billie Starkz", align: "HEEL", companies: [STARDOM] },
+  { name: "Billie Starkz", height: "5'5\"", weight: "108 lbs", align: "HEEL", companies: [STARDOM] },
   { name: "Hikaru Shida", height: "5'5\"", weight: "126 lbs", align: "FACE", companies: [STARDOM] },
   { name: "Jamie Hayter", height: "5'8\"", weight: "143 lbs", align: "FACE", companies: [STARDOM] },
-  { name: "Kris Statlander", nickname: "The Galaxy's Greatest Alien", align: "FACE", companies: [STARDOM] },
-  { name: "Lena Kross", height: "6'0\"", align: "TWEENER", companies: [STARDOM] },
-  { name: "Maya World", align: "TWEENER", companies: [STARDOM] },
-  { name: "Megan Bayne", nickname: "The Unbreakable", align: "HEEL", companies: [STARDOM] },
+  { name: "Kris Statlander", nickname: "The Galaxy's Greatest Alien", height: "5'9\"", weight: "143 lbs",
+    align: "FACE", companies: [STARDOM] },
+  { name: "Lena Kross", height: "6'0\"", weight: "165 lbs", align: "TWEENER", companies: [STARDOM] },
+  { name: "Maya World", height: "5'4\"", weight: "150 lbs", align: "TWEENER", companies: [STARDOM] },
+  { name: "Megan Bayne", nickname: "The Unbreakable", height: "5'11\"", weight: "187 lbs",
+    align: "HEEL", companies: [STARDOM] },
   { name: "Mina Shirakawa", nickname: "The Venus of Pro Wrestling", height: "5'2\"", weight: "119 lbs",
     align: "FACE", companies: [STARDOM] },
   { name: "Queen Aminata", height: "5'9\"", weight: "145 lbs", align: "FACE", companies: [STARDOM] },
   { name: "Riho", height: "5'1\"", weight: "99 lbs", align: "FACE", companies: [STARDOM] },
   { name: "Yuka Sakazaki", nickname: "The Magical Girl", height: "5'2\"", weight: "128 lbs",
     align: "FACE", companies: [STARDOM] },
-  { name: "Zayda Steel", height: "5'4\"", align: "HEEL", companies: [STARDOM] },
+  { name: "Zayda Steel", height: "5'4\"", weight: "119 lbs", align: "HEEL", companies: [STARDOM] },
   { name: "Asuka", nickname: "The Empress of Tomorrow", height: "5'3\"", weight: "132 lbs",
     align: "HEEL", companies: [STARDOM] },
   { name: "Bayley", nickname: "The Role Model", height: "5'6\"", weight: "119 lbs",
     align: "FACE", companies: [STARDOM] },
   { name: "Io Shirai", nickname: "The Genius of the Sky", height: "5'1\"", weight: "119 lbs",
     align: "HEEL", companies: [STARDOM] },
-  { name: "Liv Morgan", height: "5'3\"", align: "HEEL", companies: [STARDOM] },
+  { name: "Liv Morgan", height: "5'3\"", weight: "125 lbs", align: "HEEL", companies: [STARDOM] },
   { name: "Kairi Hojo", nickname: "The Pirate Princess", height: "5'1\"", weight: "115 lbs",
     align: "FACE", companies: [STARDOM] },
-  { name: "Roxanne Perez", nickname: "The Prodigy", height: "5'1\"", align: "HEEL", companies: [STARDOM] },
+  { name: "Roxanne Perez", nickname: "The Prodigy", height: "5'1\"", weight: "110 lbs",
+    align: "HEEL", companies: [STARDOM] }, // estimated
   { name: "Sol Ruca", height: "5'9\"", weight: "139 lbs", align: "FACE", companies: [STARDOM] },
   { name: "Stephanie Vaquer", nickname: "La Primera", height: "5'4\"", weight: "110 lbs",
     align: "FACE", companies: [STARDOM] },
@@ -272,7 +279,8 @@ const ROSTER: Person[] = [
     align: "HEEL", companies: [STARDOM] },
   { name: "Giulia", nickname: "The Beautiful Madness", height: "5'4\"", weight: "121 lbs",
     align: "HEEL", companies: [STARDOM] },
-  { name: "Tatum Paxley", align: "TWEENER", companies: [STARDOM] },
+  { name: "Tatum Paxley", height: "5'6\"", weight: "130 lbs",
+    align: "TWEENER", companies: [STARDOM] }, // estimated
 ];
 
 /**
@@ -371,10 +379,23 @@ async function main() {
 
   let created = 0;
   let skipped = 0;
+  let filled = 0;
 
   for (const person of ROSTER) {
     const existing = await db.wrestler.findFirst({ where: { worldId: world.id, name: person.name } });
     if (existing) {
+      // Someone already here keeps everything they have. A blank field is the
+      // only thing this fills, so re-running after finding a better source
+      // tops up the gaps without overwriting anything you typed yourself.
+      const fill = {
+        ...(existing.nickname === null && person.nickname ? { nickname: person.nickname } : {}),
+        ...(existing.height === null && person.height ? { height: person.height } : {}),
+        ...(existing.weight === null && person.weight ? { weight: person.weight } : {}),
+      };
+      if (Object.keys(fill).length > 0) {
+        await db.wrestler.update({ where: { id: existing.id }, data: fill });
+        filled += 1;
+      }
       skipped += 1;
       continue;
     }
@@ -404,7 +425,7 @@ async function main() {
     created += 1;
   }
 
-  console.log(`  + ${created} wrestlers (${skipped} already present)`);
+  console.log(`  + ${created} wrestlers (${skipped} already present, ${filled} topped up)`);
   for (const key of Object.keys(SCAFFOLD)) {
     const size = ROSTER.filter((p) => p.companies.includes(key)).length;
     console.log(`      ${key.padEnd(8)} ${size}`);
