@@ -1,6 +1,9 @@
 /**
- * Loads the starting roster: AEW, NJPW and Stardom, plus each promotion's
- * championships and weekly series.
+ * Loads the starting roster: AEW, NJPW and Stardom.
+ *
+ * Roster only. It signs people to promotions and stops there — belts, weekly
+ * series and everything else about how a promotion runs are yours to invent,
+ * and a seed script guessing at them just gives you a list to delete.
  *
  *   npm run seed:real                      # into the first world
  *   npm run seed:real -- <worldId>         # into a specific world
@@ -378,55 +381,14 @@ const ROSTER: Person[] = [
 ];
 
 /**
- * Only used when a promotion is missing entirely. If you have already made your
- * own AEW, this script signs people to it and leaves your titles, series,
- * colour and spelling alone.
+ * The bare minimum needed to hold a contract, used only when a promotion is
+ * missing entirely. No titles, no series: an empty promotion you fill in
+ * yourself beats a list of guesses you have to clear out.
  */
-const SCAFFOLD: Record<string, { name: string; color: string; titles: string[]; series: { name: string; startsOn: string; color: string }[] }> = {
-  [AEW]: {
-    name: "All Elite Wrestling",
-    color: "#c8a24a",
-    titles: [
-      "AEW World Championship",
-      "AEW International Championship",
-      "AEW Continental Championship",
-      "AEW TNT Championship",
-      "AEW World Tag Team Championship",
-      "AEW World Trios Championship",
-    ],
-    series: [
-      { name: "AEW Dynamite", startsOn: "2026-08-26", color: "#c8a24a" },
-      { name: "AEW Collision", startsOn: "2026-08-22", color: "#7c3aed" },
-    ],
-  },
-  [NJPW]: {
-    name: "New Japan Pro-Wrestling",
-    color: "#e01e2b",
-    titles: [
-      "IWGP World Heavyweight Championship",
-      "IWGP Global Heavyweight Championship",
-      "IWGP Junior Heavyweight Championship",
-      "NEVER Openweight Championship",
-      "IWGP Tag Team Championship",
-      "IWGP Junior Heavyweight Tag Team Championship",
-    ],
-    // Nothing weekly: New Japan runs tours and special events, which is exactly
-    // the "a company may have zero weekly series" case.
-    series: [],
-  },
-  [STARDOM]: {
-    name: "World Wonder Ring Stardom",
-    color: "#e6398f",
-    titles: [
-      "World of Stardom Championship",
-      "Wonder of Stardom Championship",
-      "IWGP Women's Championship",
-      "Goddess of Stardom Championship",
-      "Artist of Stardom Championship",
-      "Future of Stardom Championship",
-    ],
-    series: [],
-  },
+const PROMOTIONS: Record<string, { name: string; color: string }> = {
+  [AEW]: { name: "All Elite Wrestling", color: "#c8a24a" },
+  [NJPW]: { name: "New Japan Pro-Wrestling", color: "#e01e2b" },
+  [STARDOM]: { name: "World Wonder Ring Stardom", color: "#e6398f" },
 };
 
 async function main() {
@@ -438,7 +400,7 @@ async function main() {
   console.log(`Loading into "${world.name}" (${world.id})\n`);
 
   const companyIds = new Map<string, string>();
-  for (const [key, plan] of Object.entries(SCAFFOLD)) {
+  for (const [key, plan] of Object.entries(PROMOTIONS)) {
     const existing =
       (await db.company.findFirst({ where: { worldId: world.id, abbreviation: key } })) ??
       (await db.company.findFirst({ where: { worldId: world.id, name: plan.name } }));
@@ -453,21 +415,7 @@ async function main() {
       data: { worldId: world.id, name: plan.name, abbreviation: key, color: plan.color },
     });
     companyIds.set(key, company.id);
-    await db.title.createMany({
-      data: plan.titles.map((name, index) => ({ companyId: company.id, name, order: index + 1 })),
-    });
-    for (const series of plan.series) {
-      await db.weeklySeries.create({
-        data: {
-          companyId: company.id,
-          name: series.name,
-          cadence: "WEEKLY",
-          startsOn: new Date(`${series.startsOn}T00:00:00.000Z`),
-          color: series.color,
-        },
-      });
-    }
-    console.log(`  + ${key} — created, with ${plan.titles.length} titles and ${plan.series.length} series`);
+    console.log(`  + ${key} — created empty; add its titles and series yourself`);
   }
   console.log("");
 
@@ -522,11 +470,11 @@ async function main() {
   }
 
   console.log(`  + ${created} wrestlers (${skipped} already present, ${filled} topped up)`);
-  for (const key of Object.keys(SCAFFOLD)) {
+  for (const key of Object.keys(PROMOTIONS)) {
     const size = ROSTER.filter((p) => p.companies.includes(key)).length;
     console.log(`      ${key.padEnd(8)} ${size}`);
   }
-  console.log("\nTitles start vacant — a lineage only begins when you play a title match.");
+  console.log("\nNo titles and no series were created — those are yours to add.");
   await db.$disconnect();
 }
 
