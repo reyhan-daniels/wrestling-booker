@@ -81,7 +81,7 @@ export default async function SettingsPage() {
         <details>
           <summary className="section-title cursor-pointer">New world</summary>
           <form action={createWorld} className="mt-3 flex gap-2">
-            <input name="name" required placeholder="A second universe" className="field" />
+            <input name="name" required placeholder="World name" className="field" />
             <button type="submit" className="btn-primary">Create</button>
           </form>
           <p className="mt-2 text-xs text-ink-500">

@@ -114,7 +114,6 @@ export function WrestlerForm({
             id="nickname"
             name="nickname"
             defaultValue={wrestler?.nickname ?? ""}
-            placeholder="&ldquo;The Rated-R Superstar&rdquo;"
             className="field"
           />
         </div>

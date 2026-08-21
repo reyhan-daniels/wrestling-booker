@@ -16,7 +16,7 @@ export default function NewCompanyPage() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label" htmlFor="abbreviation">Abbreviation</label>
-            <input id="abbreviation" name="abbreviation" placeholder="NXT" className="field" />
+            <input id="abbreviation" name="abbreviation" className="field" />
           </div>
           <div>
             <label className="label" htmlFor="color">Accent colour</label>

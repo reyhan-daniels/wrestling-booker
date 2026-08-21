@@ -29,7 +29,7 @@ export default async function NewShowPage({ searchParams }: PageProps<"/shows/ne
         <form action={createShow} className="card space-y-4 p-4">
           <div>
             <label className="label" htmlFor="name">Name</label>
-            <input id="name" name="name" required placeholder="Summer Showdown" className="field" />
+            <input id="name" name="name" required className="field" />
           </div>
 
           <div className="grid grid-cols-2 gap-3">

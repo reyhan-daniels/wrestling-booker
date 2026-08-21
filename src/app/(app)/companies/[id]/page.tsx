@@ -75,7 +75,7 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
             <summary className="cursor-pointer text-sm text-plan-300">+ Add title</summary>
             <form action={createTitle} className="mt-3 space-y-3">
               <input type="hidden" name="companyId" value={id} />
-              <input name="name" required placeholder="World Heavyweight Championship" className="field" />
+              <input name="name" required placeholder="Title name" className="field" />
               <button type="submit" className="btn-primary w-full">Add title</button>
             </form>
           </details>
@@ -137,7 +137,7 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
             <summary className="cursor-pointer text-sm text-plan-300">+ Add series</summary>
             <form action={createSeries} className="mt-3 space-y-3">
               <input type="hidden" name="companyId" value={id} />
-              <input name="name" required placeholder="Monday Night Show" className="field" />
+              <input name="name" required placeholder="Series name" className="field" />
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="label" htmlFor="cadence">Cadence</label>
