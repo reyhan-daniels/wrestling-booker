@@ -69,6 +69,19 @@ export function IconTitles({ className }: Props) {
   );
 }
 
+/** Three figures shoulder to shoulder: a unit, whatever its size. */
+export function IconUnits({ className }: Props) {
+  return (
+    <Svg className={className}>
+      <circle cx="12" cy="7" r="2.6" />
+      <circle cx="5" cy="9.5" r="2.1" />
+      <circle cx="19" cy="9.5" r="2.1" />
+      <path d="M7.5 19v-3a4.5 4.5 0 0 1 9 0v3" />
+      <path d="M1.5 19v-2a3.6 3.6 0 0 1 3.5-3.5M22.5 19v-2a3.6 3.6 0 0 0-3.5-3.5" />
+    </Svg>
+  );
+}
+
 export function IconSettings({ className }: Props) {
   return (
     <Svg className={className}>

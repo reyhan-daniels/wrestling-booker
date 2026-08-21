@@ -7,13 +7,15 @@
  *   - a title match closes one reign and opens the next, automatically
  *   - a successful defence leaves the reign alone
  *   - the past is immutable
+ *   - a unit's kind and record are derived, never stored
  */
 import "dotenv/config";
 import assert from "node:assert/strict";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { applyTitleChanges } from "../src/lib/titles";
-import { getHeadToHead, getRecord, getTitleHistory, getCalendar } from "../src/lib/derive";
+import { getHeadToHead, getRecord, getTitleHistory, getCalendar, getUnitMatches, unitRecordFrom } from "../src/lib/derive";
+import { unitKind } from "../src/lib/constants";
 import { parseISODate } from "../src/lib/dates";
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
@@ -206,6 +208,93 @@ async function main() {
     const storedShows = await db.show.count({ where: { seriesId: series.id } });
     check("projected episodes create no rows until booked", () => {
       assert.equal(storedShows, 0);
+    });
+
+    // --- units: tag teams, trios and factions ------------------------------
+    //
+    // Night Four is a genuine tag match: Ace and Third on one side, Rival and
+    // Fourth on the other. Note that Ace and Third have *also* wrestled each
+    // other (Night Two), which is exactly the case a unit record must ignore.
+    const fourth = await db.wrestler.create({ data: { worldId: world.id, name: "Fourth" } });
+    const showFour = await db.show.create({
+      data: {
+        worldId: world.id,
+        name: "Night Four",
+        date: parseISODate("2026-04-10"),
+        companies: { connect: [{ id: company.id }] },
+        segments: {
+          create: [
+            {
+              order: 1,
+              type: "MATCH",
+              participants: {
+                create: [
+                  { wrestlerId: ace.id, order: 0 },
+                  { wrestlerId: third.id, order: 1 },
+                  { wrestlerId: rival.id, order: 2 },
+                  { wrestlerId: fourth.id, order: 3 },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      include: { segments: true },
+    });
+    await db.segmentParticipant.updateMany({
+      where: { segmentId: showFour.segments[0].id, wrestlerId: { in: [ace.id, third.id] } },
+      data: { isWinner: true },
+    });
+
+    const teamIds = [ace.id, third.id];
+    const bookedRows = await getUnitMatches(teamIds);
+    check("a booked tag match gives the unit nothing", () => {
+      assert.equal(bookedRows.length, 0);
+    });
+
+    await play(showFour.id);
+
+    const team = await db.group.create({
+      data: { worldId: world.id, name: "The Pairing", members: { connect: [{ id: ace.id }, { id: third.id }] } },
+    });
+
+    check("a unit's kind is its size, not a stored field", () => {
+      assert.equal(unitKind(2), "Tag team");
+      assert.equal(unitKind(3), "Trio");
+      assert.equal(unitKind(7), "Faction");
+      // Nothing on the row says which it is.
+      assert.equal("kind" in team, false);
+    });
+
+    const teamRecord = unitRecordFrom(await getUnitMatches(teamIds), teamIds);
+    check("a unit's record counts only matches with everyone on the same side", () => {
+      // Night Two had both men in it, on opposite sides. It is not counted.
+      assert.equal(teamRecord.matches, 1);
+      assert.equal(teamRecord.wins, 1);
+      assert.equal(teamRecord.losses, 0);
+    });
+
+    const losingIds = [rival.id, fourth.id];
+    const losingRecord = unitRecordFrom(await getUnitMatches(losingIds), losingIds);
+    check("the beaten pair takes the loss as a unit", () => {
+      assert.equal(losingRecord.matches, 1);
+      assert.equal(losingRecord.losses, 1);
+    });
+
+    const opposedIds = [ace.id, rival.id];
+    const opposedRecord = unitRecordFrom(await getUnitMatches(opposedIds), opposedIds);
+    check("a pair who have only ever fought each other has no record", () => {
+      assert.equal(opposedRecord.matches, 0);
+    });
+
+    // Adding a member is the only thing that turns a tag team into a trio.
+    await db.group.update({ where: { id: team.id }, data: { members: { connect: [{ id: rival.id }] } } });
+    const grown = await db.group.findUniqueOrThrow({
+      where: { id: team.id },
+      include: { members: { select: { id: true } } },
+    });
+    check("adding a member re-derives the kind with no field to update", () => {
+      assert.equal(unitKind(grown.members.length), "Trio");
     });
 
     // A show that was played is history and stays that way.

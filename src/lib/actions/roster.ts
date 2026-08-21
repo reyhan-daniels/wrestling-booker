@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { Alignment, WrestlerStatus } from "@/generated/prisma/enums";
+import { Alignment, Gender, WrestlerStatus } from "@/generated/prisma/enums";
 import { bool, date, integer, list, requiredText, text } from "@/lib/form";
 import { readPhoto } from "@/lib/photo";
 import { getActiveWorld } from "@/lib/world";
@@ -11,6 +11,12 @@ import { getActiveWorld } from "@/lib/world";
 function alignmentOf(data: FormData): Alignment {
   const value = String(data.get("align") ?? "");
   return value in Alignment ? (value as Alignment) : Alignment.TWEENER;
+}
+
+/** Left null when unset — never guessed from a name. */
+function genderOf(data: FormData): Gender | null {
+  const value = String(data.get("gender") ?? "");
+  return value in Gender ? (value as Gender) : null;
 }
 
 function statusOf(data: FormData): WrestlerStatus {
@@ -33,6 +39,7 @@ export async function createWrestler(data: FormData) {
         height: text(data, "height"),
         weight: text(data, "weight"),
         align: alignmentOf(data),
+        gender: genderOf(data),
         status: statusOf(data),
         notes: text(data, "notes"),
       },
@@ -83,6 +90,7 @@ export async function updateWrestler(data: FormData) {
       height: text(data, "height"),
       weight: text(data, "weight"),
       align: alignmentOf(data),
+      gender: genderOf(data),
       status: statusOf(data),
       notes: text(data, "notes"),
     },

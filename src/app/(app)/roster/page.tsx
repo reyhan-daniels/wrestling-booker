@@ -3,34 +3,72 @@ import { db } from "@/lib/db";
 import { getRecords, formatRecord } from "@/lib/derive";
 import { getActiveWorld } from "@/lib/world";
 import { PageHeader, Empty } from "@/components/ui";
+import { RosterFilters } from "@/components/roster-filters";
 import { PeekName } from "@/components/peek/peek-triggers";
 import { Avatar } from "@/components/avatar";
 import { ALIGNMENT_LABELS } from "@/lib/constants";
+import { Alignment, Gender } from "@/generated/prisma/enums";
 
 export const metadata = { title: "Roster — Wrestling Booker" };
 
 export default async function RosterPage({ searchParams }: PageProps<"/roster">) {
   const params = await searchParams;
-  const query = typeof params.q === "string" ? params.q : "";
-  const showRetired = params.retired === "1";
+  const one = (key: string) => (typeof params[key] === "string" ? params[key] : "");
+
+  const query = one("q");
+  const company = one("company");
+  const align = one("align");
+  const gender = one("gender");
+  const unit = one("unit");
+  const status = one("status");
 
   const world = await getActiveWorld();
-  const wrestlers = await db.wrestler.findMany({
-    where: {
-      worldId: world.id,
-      ...(showRetired ? {} : { status: "ACTIVE" }),
-      ...(query ? { name: { contains: query, mode: "insensitive" as const } } : {}),
-    },
-    include: {
-      photo: { select: { wrestlerId: true } },
-      contracts: {
-        where: { endedOn: null },
-        include: { company: { select: { id: true, name: true, abbreviation: true } } },
-        orderBy: { isPrimary: "desc" },
+
+  // Only values the schema knows about become filters; anything else in the
+  // URL is ignored rather than thrown at the database.
+  const where = {
+    worldId: world.id,
+    ...(status === "all" ? {} : { status: status === "RETIRED" ? "RETIRED" : "ACTIVE" } as const),
+    ...(query ? { name: { contains: query, mode: "insensitive" as const } } : {}),
+    ...(align in Alignment ? { align: align as Alignment } : {}),
+    ...(gender === "unset"
+      ? { gender: null }
+      : gender in Gender
+        ? { gender: gender as Gender }
+        : {}),
+    ...(company === "none"
+      ? { contracts: { none: { endedOn: null } } }
+      : company
+        ? { contracts: { some: { companyId: company, endedOn: null } } }
+        : {}),
+    ...(unit === "none" ? { groups: { none: {} } } : unit ? { groups: { some: { id: unit } } } : {}),
+  };
+
+  const [wrestlers, total, companies, units] = await Promise.all([
+    db.wrestler.findMany({
+      where,
+      include: {
+        photo: { select: { wrestlerId: true } },
+        contracts: {
+          where: { endedOn: null },
+          include: { company: { select: { id: true, name: true, abbreviation: true } } },
+          orderBy: { isPrimary: "desc" },
+        },
       },
-    },
-    orderBy: { name: "asc" },
-  });
+      orderBy: { name: "asc" },
+    }),
+    db.wrestler.count({ where: { worldId: world.id, status: "ACTIVE" } }),
+    db.company.findMany({
+      where: { worldId: world.id },
+      select: { id: true, name: true, abbreviation: true },
+      orderBy: [{ order: "asc" }, { name: "asc" }],
+    }),
+    db.group.findMany({
+      where: { worldId: world.id, isActive: true },
+      select: { id: true, name: true },
+      orderBy: [{ order: "asc" }, { name: "asc" }],
+    }),
+  ]);
 
   const records = await getRecords(wrestlers.map((w) => w.id));
 
@@ -38,7 +76,7 @@ export default async function RosterPage({ searchParams }: PageProps<"/roster">)
     <div>
       <PageHeader
         title="Roster"
-        subtitle={`${wrestlers.length} wrestler${wrestlers.length === 1 ? "" : "s"}`}
+        subtitle={`${total} wrestler${total === 1 ? "" : "s"}`}
         action={
           <Link href="/roster/new" className="btn-primary">
             New
@@ -46,30 +84,24 @@ export default async function RosterPage({ searchParams }: PageProps<"/roster">)
         }
       />
 
-      <form className="mb-4 flex gap-2">
-        <input
-          name="q"
-          defaultValue={query}
-          placeholder="Search names"
-          className="field"
-          type="search"
-        />
-        {showRetired && <input type="hidden" name="retired" value="1" />}
-        <button type="submit" className="btn-ghost">Search</button>
-      </form>
-
-      <div className="mb-4">
-        <Link
-          href={showRetired ? "/roster" : "/roster?retired=1"}
-          className="display text-[10px] tracking-widest text-ink-500 hover:text-ink-200"
-        >
-          {showRetired ? "Hide retired" : "Show retired"}
-        </Link>
-      </div>
+      <RosterFilters
+        values={{ q: query, company, align, gender, unit, status }}
+        companies={companies}
+        units={units}
+        showing={wrestlers.length}
+        total={total}
+      />
 
       {wrestlers.length === 0 ? (
         <Empty>
-          No wrestlers yet. <Link href="/roster/new" className="text-plan-300 underline">Create the first one.</Link>
+          {total === 0 ? (
+            <>
+              No wrestlers yet.{" "}
+              <Link href="/roster/new" className="text-plan-300 underline">Create the first one.</Link>
+            </>
+          ) : (
+            <>Nobody matches that. <Link href="/roster" className="text-plan-300 underline">Clear the filters.</Link></>
+          )}
         </Empty>
       ) : (
         <ul className="grid gap-2 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

@@ -101,11 +101,32 @@ Fields:
 - **Weight**
 - **Alignment** — Face / Heel / Tweener (pick-list). Single current value.
   (If alignment-turn history is ever wanted, this becomes a dated list. Not now.)
+- **Gender** — Men / Women / Other, or left unset. Recorded for filtering the
+  roster; never inferred from a name, and never required.
 - **Photo** — a single portrait image. (One image per wrestler, not a set.)
 - **Status** — active / retired. Drives who appears in roster-pickers when booking.
 
 **Derived, never stored:** win/loss record, rivalries. Both are computed from match
 results.
+
+### Unit — tag team, trio, faction
+A named set of wrestlers. One entity covers all three, because they differ only in
+size, and **the size is not a field**: two is a tag team, three a trio, four or more a
+faction. A faction that loses a member becomes a trio the moment they leave, with
+nothing to remember to update.
+
+Fields:
+- **Name**
+- **Colour** — optional, tints the unit wherever it is listed.
+- **Members** — any number of wrestlers. Nobody is exclusive: the same person can hold
+  a tag team, a trio and a faction at once.
+- **Notes**
+- **Disbanded** — a flag, set by hand. Nothing disbands on its own, and a disbanded
+  unit keeps its history.
+
+**Derived, never stored:** the kind (from the member count) and the unit's win/loss
+record. A unit's match is a played match where *every* member appeared **on the same
+side**; members on opposite sides are the unit imploding, and count for neither.
 
 ### Company
 A promotion.

@@ -9,6 +9,7 @@ import {
   IconSettings,
   IconTitles,
   IconToday,
+  IconUnits,
 } from "@/components/icons";
 import { PeekProvider } from "@/components/peek/peek-provider";
 import { SESSION_COOKIE } from "@/lib/auth";
@@ -18,6 +19,7 @@ const NAV = [
   { href: "/", label: "Today", Icon: IconToday },
   { href: "/calendar", label: "Calendar", Icon: IconCalendar },
   { href: "/roster", label: "Roster", Icon: IconRoster },
+  { href: "/groups", label: "Units", Icon: IconUnits },
   { href: "/companies", label: "Companies", Icon: IconCompanies },
   { href: "/titles", label: "Titles", Icon: IconTitles },
 ] as const;
@@ -91,7 +93,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
           {/* Thumb-reachable tabs. */}
           <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-800 bg-ink-900/95 pb-safe backdrop-blur lg:hidden">
-            <div className="grid grid-cols-5">
+            <div className="grid grid-cols-6">
               {NAV.map(({ href, label, Icon }) => (
                 <NavLink
                   key={href}

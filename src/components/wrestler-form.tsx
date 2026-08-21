@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { ALIGNMENT_LABELS } from "@/lib/constants";
+import { ALIGNMENT_LABELS, GENDER_LABELS } from "@/lib/constants";
 import { PHOTO_ACCEPT, describePhotoLimit, validatePhoto } from "@/lib/photo";
 
 type Wrestler = {
@@ -12,6 +12,7 @@ type Wrestler = {
   height: string | null;
   weight: string | null;
   align: string;
+  gender: string | null;
   status: string;
   notes: string | null;
   hasPhoto?: boolean;
@@ -120,7 +121,7 @@ export function WrestlerForm({
             <input id="weight" name="weight" defaultValue={wrestler?.weight ?? ""} placeholder="245 lbs" className="field" />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div>
             <label className="label" htmlFor="align">Alignment</label>
             <select id="align" name="align" defaultValue={wrestler?.align ?? "TWEENER"} className="field">
@@ -130,6 +131,15 @@ export function WrestlerForm({
             </select>
           </div>
           <div>
+            <label className="label" htmlFor="gender">Division</label>
+            <select id="gender" name="gender" defaultValue={wrestler?.gender ?? ""} className="field">
+              <option value="">Unset</option>
+              {Object.entries(GENDER_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="col-span-2 sm:col-span-1">
             <label className="label" htmlFor="status">Status</label>
             <select id="status" name="status" defaultValue={wrestler?.status ?? "ACTIVE"} className="field">
               <option value="ACTIVE">Active</option>

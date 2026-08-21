@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { ALIGNMENT_LABELS } from "@/lib/constants";
+import { ALIGNMENT_LABELS, unitKind } from "@/lib/constants";
 import { formatDate, todayISO } from "@/lib/dates";
 import { formatRecord, getCurrentChampions, getMatchesFor, getTopOpponents, recordFrom } from "@/lib/derive";
 import { getActiveWorld } from "@/lib/world";
@@ -20,6 +20,10 @@ export default async function WrestlerPage({ params }: PageProps<"/roster/[id]">
       contracts: {
         include: { company: { select: { id: true, name: true } } },
         orderBy: [{ endedOn: "asc" }, { isPrimary: "desc" }],
+      },
+      groups: {
+        include: { members: { select: { id: true, name: true } } },
+        orderBy: [{ isActive: "desc" }, { order: "asc" }, { name: "asc" }],
       },
     },
   });
@@ -233,6 +237,37 @@ export default async function WrestlerPage({ params }: PageProps<"/roster/[id]">
                         {opponent.matches} · {opponent.wins}-{opponent.losses}
                       </span>
                     </PeekHeadToHead>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {wrestler.groups.length > 0 && (
+            <section className="card p-4">
+              <p className="section-title mb-3">Units</p>
+              <ul className="space-y-1.5">
+                {wrestler.groups.map((group) => (
+                  <li
+                    key={group.id}
+                    className="rounded-lg border border-ink-800 bg-ink-900 px-3 py-2"
+                    style={group.color ? { borderLeftColor: group.color, borderLeftWidth: 2 } : undefined}
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <Link href={`/groups/${group.id}`} className="truncate text-sm hover:text-plan-300">
+                        {group.name}
+                      </Link>
+                      <span className="display shrink-0 text-[10px] tracking-widest text-ink-500">
+                        {unitKind(group.members.length)}
+                        {!group.isActive && " · Disbanded"}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 truncate text-xs text-ink-500">
+                      {group.members
+                        .filter((m) => m.id !== id)
+                        .map((m) => m.name)
+                        .join(" · ") || "Nobody else yet"}
+                    </p>
                   </li>
                 ))}
               </ul>

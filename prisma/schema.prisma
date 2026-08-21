@@ -32,6 +32,7 @@ model World {
   companies Company[]
   contracts Contract[]
   shows     Show[]
+  groups    Group[]
 }
 
 // ---------------------------------------------------------------------------
@@ -49,6 +50,14 @@ enum WrestlerStatus {
   RETIRED
 }
 
+/// Recorded so the roster can be filtered by division. Optional: left unset
+/// rather than guessed, and never inferred from a name.
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 model Wrestler {
   id       String         @id @default(cuid())
   worldId  String
@@ -59,6 +68,7 @@ model Wrestler {
   weight   String?
   align    Alignment      @default(TWEENER)
   status   WrestlerStatus @default(ACTIVE)
+  gender   Gender?
 
   /// One portrait, stored in the database so it is covered by the same backups
   /// as the rest of the world. Bytes live in WrestlerPhoto so they never ride
@@ -73,6 +83,37 @@ model Wrestler {
   contracts   Contract[]
   appearances SegmentParticipant[]
   reigns      Reign[]              @relation("ReignHolders")
+  groups      Group[]              @relation("GroupMembers")
+
+  @@index([worldId, name])
+}
+
+/// A tag team, trio or faction — one model, because they differ only in size.
+/// Which one a unit *is* is never stored: it falls out of the member count, so
+/// a faction that loses a member becomes a trio without anyone editing a field.
+/// Membership is a plain many-to-many, so a wrestler can hold a tag team, a
+/// trio and a faction at once.
+model Group {
+  id      String @id @default(cuid())
+  worldId String
+  world   World  @relation(fields: [worldId], references: [id], onDelete: Cascade)
+
+  name  String
+  /// Tints the unit wherever it is listed, same idea as a company's colour.
+  color String?
+  notes String?
+
+  /// Disbanded units stay in the world; the matches they worked are still
+  /// readable. Nothing expires on its own — you disband it by hand.
+  isActive Boolean @default(true)
+
+  /// Hand-sorted rather than alphabetical. Set by dragging.
+  order Int @default(0)
+
+  members Wrestler[] @relation("GroupMembers")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([worldId, name])
 }

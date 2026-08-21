@@ -392,3 +392,60 @@ export async function getExpiredContracts(worldId: string, asOf = new Date()) {
     orderBy: { expiresOn: "asc" },
   });
 }
+
+// ---------------------------------------------------------------------------
+// Units — tag teams, trios and factions
+// ---------------------------------------------------------------------------
+
+// `unitKind` — the one derivation here a client component needs — lives in
+// constants.ts instead, because this module reaches the database and would
+// drag the driver into the browser bundle.
+
+/**
+ * A unit's matches: played matches where *every* member appeared and shared
+ * an outcome. Members on opposite sides are not the unit working — that is
+ * the unit imploding, and it counts for neither side.
+ */
+export async function getUnitMatches(memberIds: string[]): Promise<MatchRow[]> {
+  if (memberIds.length < 2) return [];
+
+  const segments = await db.segment.findMany({
+    where: {
+      type: SegmentType.MATCH,
+      show: { isFinalized: true },
+      // Cheap prefilter; the all-members test has to happen in memory anyway.
+      participants: { some: { wrestlerId: { in: memberIds } } },
+    },
+    include: playedMatchInclude,
+    orderBy: [{ show: { date: "desc" } }, { order: "asc" }],
+  });
+
+  return segments
+    .filter((segment) => {
+      const mine = segment.participants.filter((p) => memberIds.includes(p.wrestler.id));
+      if (mine.length !== memberIds.length) return false;
+      return mine.every((p) => p.isWinner === mine[0].isWinner);
+    })
+    .map(toRow);
+}
+
+export function unitRecordFrom(rows: MatchRow[], memberIds: string[]): WinLoss {
+  let wins = 0;
+  let losses = 0;
+  let draws = 0;
+
+  for (const row of rows) {
+    // Same test as an individual record: a match nobody won is a draw, not a
+    // loss for everyone in it.
+    const decided = row.participants.some((p) => p.isWinner);
+    if (!decided) draws += 1;
+    else if (row.participants.some((p) => memberIds.includes(p.id) && p.isWinner)) wins += 1;
+    else losses += 1;
+  }
+
+  return { wins, losses, draws, matches: rows.length };
+}
+
+export async function getUnitRecord(memberIds: string[]): Promise<WinLoss> {
+  return unitRecordFrom(await getUnitMatches(memberIds), memberIds);
+}
