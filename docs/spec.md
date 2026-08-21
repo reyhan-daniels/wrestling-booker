@@ -101,7 +101,6 @@ Fields:
 - **Weight**
 - **Alignment** — Face / Heel / Tweener (pick-list). Single current value.
   (If alignment-turn history is ever wanted, this becomes a dated list. Not now.)
-- **Signature Moves** — a list, up to 5 entries. (Model as a collection, not a string.)
 - **Photo** — a single portrait image. (One image per wrestler, not a set.)
 - **Status** — active / retired. Drives who appears in roster-pickers when booking.
 

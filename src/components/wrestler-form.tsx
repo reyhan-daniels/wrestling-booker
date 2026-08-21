@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { ALIGNMENT_LABELS, MAX_SIGNATURE_MOVES } from "@/lib/constants";
+import { ALIGNMENT_LABELS } from "@/lib/constants";
 import { PHOTO_ACCEPT, describePhotoLimit, validatePhoto } from "@/lib/photo";
 
 type Wrestler = {
@@ -13,7 +13,6 @@ type Wrestler = {
   weight: string | null;
   align: string;
   status: string;
-  signatureMoves: string[];
   notes: string | null;
   hasPhoto?: boolean;
 };
@@ -41,12 +40,6 @@ export function WrestlerForm({
   companies?: { id: string; name: string; abbreviation: string | null }[];
   preselectedCompanyId?: string;
 }) {
-  // Signature moves are a collection, capped at five — never a comma-joined
-  // string typed into one box.
-  const [moves, setMoves] = useState<string[]>(
-    wrestler?.signatureMoves.length ? wrestler.signatureMoves : [""],
-  );
-
   // A portrait rides along with the rest of the form, so it can be set at the
   // moment a wrestler is created rather than only after they exist.
   const [preview, setPreview] = useState<string | null>(null);
@@ -237,39 +230,6 @@ export function WrestlerForm({
             )}
           </div>
         </div>
-      </div>
-
-      <div className="card space-y-3 p-4">
-        <p className="section-title">Signature moves</p>
-        {moves.map((move, index) => (
-          <div key={index} className="flex gap-2">
-            <input
-              name="signatureMoves"
-              value={move}
-              onChange={(event) => {
-                const next = [...moves];
-                next[index] = event.target.value;
-                setMoves(next);
-              }}
-              placeholder={`Move ${index + 1}`}
-              className="field"
-            />
-            <button
-              type="button"
-              onClick={() => setMoves(moves.filter((_, i) => i !== index))}
-              className="btn-ghost px-3"
-              aria-label="Remove move"
-            >
-              ×
-            </button>
-          </div>
-        ))}
-        {moves.length < MAX_SIGNATURE_MOVES && (
-          <button type="button" onClick={() => setMoves([...moves, ""])} className="btn-ghost">
-            + Add move
-          </button>
-        )}
-        <p className="text-xs text-ink-500">Up to {MAX_SIGNATURE_MOVES}.</p>
       </div>
 
       <div className="card p-4">

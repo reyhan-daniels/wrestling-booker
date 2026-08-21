@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { Alignment, WrestlerStatus } from "@/generated/prisma/enums";
-import { MAX_SIGNATURE_MOVES } from "@/lib/constants";
 import { bool, date, integer, list, requiredText, text } from "@/lib/form";
 import { readPhoto } from "@/lib/photo";
 import { getActiveWorld } from "@/lib/world";
@@ -17,10 +16,6 @@ function alignmentOf(data: FormData): Alignment {
 function statusOf(data: FormData): WrestlerStatus {
   const value = String(data.get("status") ?? "");
   return value in WrestlerStatus ? (value as WrestlerStatus) : WrestlerStatus.ACTIVE;
-}
-
-function movesOf(data: FormData): string[] {
-  return list(data, "signatureMoves").slice(0, MAX_SIGNATURE_MOVES);
 }
 
 export async function createWrestler(data: FormData) {
@@ -39,7 +34,6 @@ export async function createWrestler(data: FormData) {
         weight: text(data, "weight"),
         align: alignmentOf(data),
         status: statusOf(data),
-        signatureMoves: movesOf(data),
         notes: text(data, "notes"),
       },
     });
@@ -90,7 +84,6 @@ export async function updateWrestler(data: FormData) {
       weight: text(data, "weight"),
       align: alignmentOf(data),
       status: statusOf(data),
-      signatureMoves: movesOf(data),
       notes: text(data, "notes"),
     },
   });

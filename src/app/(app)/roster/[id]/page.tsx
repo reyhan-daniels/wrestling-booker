@@ -91,17 +91,6 @@ export default async function WrestlerPage({ params }: PageProps<"/roster/[id]">
             </div>
           )}
 
-          {wrestler.signatureMoves.length > 0 && (
-            <div className="card p-4">
-              <p className="section-title">Signature moves</p>
-              <ul className="mt-2 space-y-1 text-sm text-ink-200">
-                {wrestler.signatureMoves.map((move) => (
-                  <li key={move}>{move}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
           <form action={setWrestlerStatus} className="card p-4">
             <input type="hidden" name="id" value={id} />
             <input type="hidden" name="status" value={wrestler.status === "ACTIVE" ? "RETIRED" : "ACTIVE"} />

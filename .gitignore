@@ -45,3 +45,10 @@ next-env.d.ts
 
 # local database snapshots
 /backups
+
+# Claude Code personal settings (deploy permissions, machine-specific)
+.claude/settings.local.json
+
+# Working documents dropped in the repo root
+*.docx
+*.docx:Zone.Identifier

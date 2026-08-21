@@ -54,6 +54,3 @@ export const CADENCE_LABELS = {
   BIWEEKLY: "Every 2 weeks",
   MONTHLY: "Monthly",
 } as const;
-
-/** Signature moves are capped at 5 per the spec. */
-export const MAX_SIGNATURE_MOVES = 5;

@@ -15,18 +15,18 @@ import { parseISODate } from "../src/lib/dates";
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
 const ROSTER = [
-  { name: "Damien Cross", nickname: "The Iron Saint", align: "HEEL", moves: ["Crossfire", "Saint's Fall"] },
-  { name: "Rico Vega", nickname: "El Relámpago", align: "FACE", moves: ["Vega Splash", "Lightning DDT"] },
-  { name: "Buddy Kane", nickname: "Big Buddy", align: "FACE", moves: ["Kane Slam"] },
-  { name: "Marcus Steele", nickname: "The Blueprint", align: "HEEL", moves: ["Steel Trap", "Blueprint Bomb"] },
-  { name: "Jonah Vance", nickname: null, align: "TWEENER", moves: ["Vance Driver"] },
-  { name: "Kip Sullivan", nickname: "The Ace of Spades", align: "HEEL", moves: ["Deadman's Hand"] },
-  { name: "Nate Ruiz", nickname: null, align: "FACE", moves: ["Ruiz Rush"] },
-  { name: "Vic Malone", nickname: "The Enforcer", align: "HEEL", moves: ["Malone Clutch"] },
-  { name: "Andre Sol", nickname: "Sunfall", align: "FACE", moves: ["Solar Flare", "Eclipse"] },
-  { name: "Teddy Marsh", nickname: null, align: "TWEENER", moves: ["Marsh Lock"] },
-  { name: "Gio Fontaine", nickname: "Champagne", align: "HEEL", moves: ["Last Call"] },
-  { name: "Wes Barlow", nickname: null, align: "FACE", moves: ["Barlow Bomb"] },
+  { name: "Damien Cross", nickname: "The Iron Saint", align: "HEEL" },
+  { name: "Rico Vega", nickname: "El Relámpago", align: "FACE" },
+  { name: "Buddy Kane", nickname: "Big Buddy", align: "FACE" },
+  { name: "Marcus Steele", nickname: "The Blueprint", align: "HEEL" },
+  { name: "Jonah Vance", nickname: null, align: "TWEENER" },
+  { name: "Kip Sullivan", nickname: "The Ace of Spades", align: "HEEL" },
+  { name: "Nate Ruiz", nickname: null, align: "FACE" },
+  { name: "Vic Malone", nickname: "The Enforcer", align: "HEEL" },
+  { name: "Andre Sol", nickname: "Sunfall", align: "FACE" },
+  { name: "Teddy Marsh", nickname: null, align: "TWEENER" },
+  { name: "Gio Fontaine", nickname: "Champagne", align: "HEEL" },
+  { name: "Wes Barlow", nickname: null, align: "FACE" },
 ] as const;
 
 async function main() {
@@ -53,7 +53,6 @@ async function main() {
           name: entry.name,
           nickname: entry.nickname,
           align: entry.align,
-          signatureMoves: [...entry.moves],
         },
       }),
     ),

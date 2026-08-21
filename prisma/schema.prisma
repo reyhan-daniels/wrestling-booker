@@ -60,10 +60,6 @@ model Wrestler {
   align    Alignment      @default(TWEENER)
   status   WrestlerStatus @default(ACTIVE)
 
-  /// Up to 5, ordered. A collection, never a comma-joined string.
-  /// The 5-entry cap is enforced in the app layer (src/lib/validation.ts).
-  signatureMoves String[] @default([])
-
   /// One portrait, stored in the database so it is covered by the same backups
   /// as the rest of the world. Bytes live in WrestlerPhoto so they never ride
   /// along on ordinary roster queries.
