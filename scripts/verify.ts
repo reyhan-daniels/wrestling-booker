@@ -16,7 +16,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { applyTitleChanges } from "../src/lib/titles";
 import { getHeadToHead, getRecord, getTitleHistory, getCalendar, getUnitMatches, unitRecordFrom, tournamentInclude } from "../src/lib/derive";
-import { bracketFrom, competitorsOf, standingsFrom } from "../src/lib/derive";
+import { blocksFrom, bracketFrom, competitorsOf, qualifiersFrom, splitLeague, standingsFrom } from "../src/lib/derive";
 import { roundName, unitKind } from "../src/lib/constants";
 import { parseISODate } from "../src/lib/dates";
 
@@ -380,6 +380,37 @@ async function main() {
         table.filter((row) => row.block === "A").map((row) => row.name).sort(),
         ["Ace", "Rival"],
       );
+    });
+
+    check("a playoff's field is read off the block tables", () => {
+      const blocks = blocksFrom(table);
+      const q = qualifiersFrom(blocks, loaded.segments, "BLOCK_WINNERS");
+      // One from each block: Ace or Rival from A, and from B whoever leads.
+      assert.equal(q.qualifiers.length, 2);
+      assert.deepEqual([...new Set(q.qualifiers.map((c) => c.block))].sort(), ["A", "B"]);
+      // Night Five is booked but unplayed, so the blocks are not finished.
+      assert.equal(q.blocksFinished, false);
+    });
+
+    check("a playoff match never counts towards the block table", () => {
+      // Promote Night Five to a playoff match by giving it a round.
+      const withRound = loaded.segments.map((segment) =>
+        segment.show.name === "Night Five" ? { ...segment, tournamentRound: 1 } : segment,
+      );
+      const { blockStage, playoff } = splitLeague(withRound);
+      assert.equal(playoff.length, 1);
+      assert.equal(blockStage.length, 2);
+
+      const blockOnly = standingsFrom(field, blockStage, loaded);
+      const thirdRow = blockOnly.find((row) => row.name === "Third")!;
+      // Third "won" the playoff match; the block table must not notice.
+      assert.equal(thirdRow.played, 0);
+      assert.equal(thirdRow.points, 0);
+    });
+
+    check("no playoff means nobody qualifies", () => {
+      const q = qualifiersFrom(blocksFrom(table), loaded.segments, "NONE");
+      assert.equal(q.qualifiers.length, 0);
     });
 
     // The same matches read as a bracket when the format says so.

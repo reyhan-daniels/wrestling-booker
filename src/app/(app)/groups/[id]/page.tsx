@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/dates";
-import { formatRecord, getUnitMatches, unitRecordFrom } from "@/lib/derive";
+import { formatRecord, getTournamentHistory, getUnitMatches, unitRecordFrom } from "@/lib/derive";
 import { unitKind } from "@/lib/constants";
 import { getActiveWorld } from "@/lib/world";
 import { BackLink, Empty, PageHeader } from "@/components/ui";
@@ -25,7 +25,10 @@ export default async function GroupPage({ params }: PageProps<"/groups/[id]">) {
 
   const world = await getActiveWorld();
   const memberIds = group.members.map((m) => m.id);
-  const rows = await getUnitMatches(memberIds);
+  const [rows, tournaments] = await Promise.all([
+    getUnitMatches(memberIds),
+    getTournamentHistory(memberIds, world.id),
+  ]);
   const record = unitRecordFrom(rows, memberIds);
 
   return (
@@ -87,6 +90,28 @@ export default async function GroupPage({ params }: PageProps<"/groups/[id]">) {
             unit imploding, not the unit working.
           </p>
         </section>
+
+        {tournaments.length > 0 && (
+          <section className="card p-4 lg:col-span-3">
+            <p className="section-title mb-3">Tournaments</p>
+            <ul className="grid gap-1.5 sm:grid-cols-2">
+              {tournaments.map((entry) => (
+                <li key={entry.id} className="flex items-baseline justify-between gap-2 rounded-lg border border-ink-800 bg-ink-900 px-3 py-2">
+                  <Link href={`/tournaments/${entry.id}`} className="truncate text-sm hover:text-plan-300">
+                    {entry.name}
+                    {entry.block ? <span className="text-ink-500"> · Block {entry.block}</span> : null}
+                  </Link>
+                  <span className="shrink-0 text-xs text-ink-500">
+                    {entry.record
+                      ? `${entry.record.wins}-${entry.record.losses}${entry.record.draws ? `-${entry.record.draws}` : ""}`
+                      : "—"}
+                    {entry.place ? ` · ${entry.place} of ${entry.of}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <section className="card p-4 lg:col-span-3">
           <p className="section-title mb-3">Matches as a unit</p>

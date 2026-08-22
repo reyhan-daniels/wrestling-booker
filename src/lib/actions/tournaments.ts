@@ -3,13 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { TournamentFormat } from "@/generated/prisma/enums";
+import { PlayoffFormat, TournamentFormat } from "@/generated/prisma/enums";
 import { bool, date, integer, list, requiredText, text } from "@/lib/form";
 import { getActiveWorld } from "@/lib/world";
 
 function formatOf(data: FormData): TournamentFormat {
   const value = String(data.get("format") ?? "");
   return value in TournamentFormat ? (value as TournamentFormat) : TournamentFormat.ROUND_ROBIN;
+}
+
+function playoffOf(data: FormData): PlayoffFormat {
+  const value = String(data.get("playoff") ?? "");
+  return value in PlayoffFormat ? (value as PlayoffFormat) : PlayoffFormat.NONE;
 }
 
 /**
@@ -40,6 +45,8 @@ function detailsOf(data: FormData) {
     notes: text(data, "notes"),
     pointsWin: integer(data, "pointsWin") ?? 2,
     pointsDraw: integer(data, "pointsDraw") ?? 1,
+    blockCount: Math.min(Math.max(integer(data, "blockCount") ?? 1, 1), 8),
+    playoff: playoffOf(data),
     startsOn: date(data, "startsOn"),
     endsOn: date(data, "endsOn"),
   };

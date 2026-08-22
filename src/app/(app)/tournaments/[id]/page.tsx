@@ -2,11 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { formatDate, toISODate } from "@/lib/dates";
-import { TOURNAMENT_FORMAT_LABELS, roundName } from "@/lib/constants";
+import { PLAYOFF_LABELS, TOURNAMENT_FORMAT_LABELS, roundName } from "@/lib/constants";
 import {
   bracketFrom,
   blocksFrom,
   competitorsOf,
+  qualifiersFrom,
+  splitLeague,
   standingsFrom,
   tournamentInclude,
 } from "@/lib/derive";
@@ -23,9 +25,20 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
   const playedCount = segments.filter((s) => s.show.isFinalized).length;
 
   const isLeague = tournament.format === "ROUND_ROBIN";
-  const standings = standingsFrom(competitors, segments, tournament);
+
+  // In a league, a match with a round on it is a playoff match. Keeping the two
+  // apart is what stops a semi-final win inflating the block table.
+  const { blockStage, playoff: playoffSegments } = splitLeague(segments);
+  const counted = isLeague ? blockStage : segments;
+
+  const standings = standingsFrom(competitors, counted, tournament);
   const blocks = blocksFrom(standings);
-  const bracket = bracketFrom(competitors, segments, roundName);
+  const qualification = qualifiersFrom(blocks, segments, tournament.playoff);
+  const bracket = bracketFrom(
+    isLeague ? qualification.qualifiers : competitors,
+    isLeague ? playoffSegments : segments,
+    roundName,
+  );
 
   // Where a new tournament match would be booked from. Nothing is created here
   // — this is a link to the booking screen, not a shortcut past it.
@@ -59,15 +72,55 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
       </p>
 
       {isLeague ? (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {blocks.map(({ block, standings: table }) => (
-            <section key={block ?? "single"} className="card p-4 lg:col-span-2 lg:[&:only-child]:col-span-2">
-              <p className="section-title mb-3">
-                {block ? `Block ${block}` : "Standings"}
-              </p>
-              <Table rows={table} pointsWin={tournament.pointsWin} pointsDraw={tournament.pointsDraw} />
+        <div className="space-y-4">
+          <div className={blocks.length > 1 ? "grid gap-4 lg:grid-cols-2" : ""}>
+            {blocks.map(({ block, standings: table }) => (
+              <section key={block ?? "single"} className="card p-4">
+                <p className="section-title mb-3">{block ? `Block ${block}` : "Standings"}</p>
+                <Table rows={table} pointsWin={tournament.pointsWin} pointsDraw={tournament.pointsDraw} />
+              </section>
+            ))}
+          </div>
+
+          {tournament.playoff !== "NONE" && (
+            <section className="card border-plan-500/40 bg-plan-500/5 p-4">
+              <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+                <p className="section-title">{qualification.label}</p>
+                <span className="display text-[10px] tracking-widest text-ink-500">
+                  {PLAYOFF_LABELS[tournament.playoff]}
+                </span>
+              </div>
+              {qualification.qualifiers.length === 0 ? (
+                <p className="text-sm text-ink-400">Nobody has played a block match yet.</p>
+              ) : (
+                <>
+                  <p className="text-sm text-ink-200">
+                    {qualification.qualifiers.map((c) => c.name).join(" · ")}
+                  </p>
+                  <p className="mt-2 text-xs text-ink-500">
+                    {qualification.blocksFinished
+                      ? "Blocks are done — book the playoff as a tournament match with a round number."
+                      : "As the table stands. Block matches are still to be played."}
+                  </p>
+                </>
+              )}
             </section>
-          ))}
+          )}
+
+          {playoffSegments.length > 0 &&
+            bracket.rounds.map((round) => (
+              <section key={round.round} className="card p-4">
+                <div className="mb-3 flex items-baseline justify-between gap-3">
+                  <p className="section-title">{round.label}</p>
+                  <span className="display text-[10px] tracking-widest text-ink-500">
+                    {round.isComplete
+                      ? "Complete"
+                      : `${round.segments.filter((s) => s.show.isFinalized).length} of ${round.segments.length} played`}
+                  </span>
+                </div>
+                <MatchList segments={round.segments} />
+              </section>
+            ))}
         </div>
       ) : (
         <div className="space-y-4">
@@ -85,32 +138,7 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
                     {round.isComplete ? "Complete" : `${round.segments.filter((s) => s.show.isFinalized).length} of ${round.segments.length} played`}
                   </span>
                 </div>
-                <ul className="space-y-1.5">
-                  {round.segments.map((segment) => (
-                    <li key={segment.id} className="rounded-lg border border-ink-800 bg-ink-900 p-3">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="text-sm">
-                          {segment.participants.map((p) => p.wrestler.name).join(" vs ")}
-                        </span>
-                        <StateChip isFinalized={segment.show.isFinalized} />
-                      </div>
-                      <p className="mt-1 text-xs text-ink-500">
-                        <PeekShowButton id={segment.show.id} className="underline decoration-dotted underline-offset-2">
-                          {segment.show.name}
-                        </PeekShowButton>{" "}
-                        · {formatDate(segment.show.date)}
-                        {segment.show.isFinalized && (
-                          <>
-                            {" · won by "}
-                            <span className="text-played-300">
-                              {segment.participants.filter((p) => p.isWinner).map((p) => p.wrestler.name).join(" & ") || "nobody"}
-                            </span>
-                          </>
-                        )}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
+                <MatchList segments={round.segments} />
               </section>
             ))
           )}
@@ -164,6 +192,44 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
         </section>
       )}
     </div>
+  );
+}
+
+type ListSegment = {
+  id: string;
+  show: { id: string; name: string; date: Date; isFinalized: boolean };
+  participants: { isWinner: boolean; wrestler: { id: string; name: string } }[];
+};
+
+function MatchList({ segments }: { segments: ListSegment[] }) {
+  return (
+    <ul className="space-y-1.5">
+      {segments.map((segment) => (
+        <li key={segment.id} className="rounded-lg border border-ink-800 bg-ink-900 p-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-sm">
+              {segment.participants.map((p) => p.wrestler.name).join(" vs ")}
+            </span>
+            <StateChip isFinalized={segment.show.isFinalized} />
+          </div>
+          <p className="mt-1 text-xs text-ink-500">
+            <PeekShowButton id={segment.show.id} className="underline decoration-dotted underline-offset-2">
+              {segment.show.name}
+            </PeekShowButton>{" "}
+            · {formatDate(segment.show.date)}
+            {segment.show.isFinalized && (
+              <>
+                {" · won by "}
+                <span className="text-played-300">
+                  {segment.participants.filter((p) => p.isWinner).map((p) => p.wrestler.name).join(" & ") ||
+                    "nobody"}
+                </span>
+              </>
+            )}
+          </p>
+        </li>
+      ))}
+    </ul>
   );
 }
 

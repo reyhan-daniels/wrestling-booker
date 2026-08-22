@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ColorPicker } from "@/components/color-picker";
-import { TOURNAMENT_FORMAT_LABELS } from "@/lib/constants";
+import { PLAYOFF_LABELS, TOURNAMENT_FORMAT_LABELS, blockLetters } from "@/lib/constants";
 
 export type Contender = {
   /** "w:<id>" for a wrestler, "g:<id>" for a unit. */
@@ -22,6 +22,8 @@ type Tournament = {
   notes: string | null;
   pointsWin: number;
   pointsDraw: number;
+  blockCount: number;
+  playoff: string;
   startsOn: string;
   endsOn: string;
   isComplete: boolean;
@@ -52,6 +54,7 @@ export function TournamentForm({
   submitLabel: string;
 }) {
   const [format, setFormat] = useState(tournament?.format ?? "ROUND_ROBIN");
+  const [blockCount, setBlockCount] = useState(tournament?.blockCount ?? 1);
   const [entrants, setEntrants] = useState<{ ref: string; block: string }[]>(
     tournament?.entrants.map((raw) => {
       const [ref, block] = raw.split("@");
@@ -64,14 +67,18 @@ export function TournamentForm({
   const byRef = new Map(contenders.map((c) => [c.ref, c]));
   const chosen = new Set(entrants.map((e) => e.ref));
 
+  // The blocks that exist are the ones you asked for, not the ones that happen
+  // to have been used. An assignment outside them reads as unassigned, so what
+  // the form shows is what it saves.
+  const letters = blockLetters(blockCount);
+  const blockOf = (entrant: { block: string }) => (letters.includes(entrant.block) ? entrant.block : "");
+  const sizes = new Map(letters.map((l) => [l, entrants.filter((e) => blockOf(e) === l).length]));
+  const unassigned = entrants.filter((e) => blockOf(e) === "").length;
+
   const matches = contenders
     .filter((c) => !chosen.has(c.ref))
     .filter((c) => (query ? c.name.toLowerCase().includes(query.trim().toLowerCase()) : true))
     .slice(0, 40);
-
-  // Blocks in use, so the buttons offered are the ones already in play plus one.
-  const blocks = [...new Set(entrants.map((e) => e.block).filter(Boolean))].sort();
-  const nextBlock = String.fromCharCode(65 + blocks.length);
 
   function setBlock(ref: string, block: string) {
     setEntrants((current) => current.map((e) => (e.ref === ref ? { ...e, block } : e)));
@@ -89,7 +96,7 @@ export function TournamentForm({
             name="name"
             required
             defaultValue={tournament?.name}
-            placeholder="G1 Climax"
+            placeholder="Tournament name"
             className="field"
           />
         </div>
@@ -132,7 +139,39 @@ export function TournamentForm({
         </div>
 
         {isLeague && (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="label" htmlFor="blockCount">Blocks</label>
+                <select
+                  id="blockCount"
+                  name="blockCount"
+                  value={blockCount}
+                  onChange={(event) => setBlockCount(Number(event.target.value))}
+                  className="field"
+                >
+                  {[1, 2, 3, 4].map((count) => (
+                    <option key={count} value={count}>
+                      {count === 1 ? "One block" : `${count} blocks`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label" htmlFor="playoff">After the blocks</label>
+                <select
+                  id="playoff"
+                  name="playoff"
+                  defaultValue={tournament?.playoff ?? "NONE"}
+                  className="field"
+                >
+                  {Object.entries(PLAYOFF_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="label" htmlFor="pointsWin">Points for a win</label>
               <input
@@ -155,7 +194,8 @@ export function TournamentForm({
                 className="field"
               />
             </div>
-          </div>
+            </div>
+          </>
         )}
 
         <ColorPicker name="color" defaultValue={tournament?.color} label="Colour" />
@@ -183,14 +223,14 @@ export function TournamentForm({
                     {contender?.isUnit && <span className="ml-1.5 chip-muted">Unit</span>}
                   </span>
 
-                  {isLeague && (
+                  {isLeague && blockCount > 1 && (
                     <span className="flex shrink-0 gap-1">
-                      {[...blocks, nextBlock].map((block) => (
+                      {letters.map((block) => (
                         <button
                           key={block}
                           type="button"
-                          onClick={() => setBlock(entrant.ref, entrant.block === block ? "" : block)}
-                          className={entrant.block === block ? "chip-plan" : "chip-muted"}
+                          onClick={() => setBlock(entrant.ref, blockOf(entrant) === block ? "" : block)}
+                          className={blockOf(entrant) === block ? "chip-plan" : "chip-muted"}
                         >
                           {block}
                         </button>
@@ -209,7 +249,7 @@ export function TournamentForm({
                   <input
                     type="hidden"
                     name="entrants"
-                    value={entrant.block ? `${entrant.ref}@${entrant.block}` : entrant.ref}
+                    value={blockOf(entrant) ? `${entrant.ref}@${blockOf(entrant)}` : entrant.ref}
                   />
                 </li>
               );
@@ -239,9 +279,17 @@ export function TournamentForm({
           ))}
         </ul>
 
-        <p className="mt-3 text-xs text-ink-500">
+        {isLeague && blockCount > 1 && (
+          <p className="mt-3 text-xs text-ink-500">
+            {letters.map((letter) => `Block ${letter}: ${sizes.get(letter) ?? 0}`).join(" · ")}
+            {unassigned > 0 && ` · ${unassigned} unassigned`}
+          </p>
+        )}
+        <p className="mt-2 text-xs text-ink-500">
           {isLeague
-            ? "Tag the field into blocks if you want two tables, the way the G1 runs. Leave them untagged for one."
+            ? blockCount > 1
+              ? "Assign each entrant to a block by hand — nothing draws them for you. Anyone left unassigned sits in their own table."
+              : "One table. Choose more blocks above if you want the field split."
             : "Order does not matter — the bracket is read off the matches you book, round by round."}
         </p>
       </div>

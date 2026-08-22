@@ -142,14 +142,24 @@ Fields:
 - **Promotion** — optional; a tournament can be co-promoted or belong to nobody.
 - **Field** — entrants, each one a wrestler *or* a unit. A tag league is a league whose
   entrants are units.
-- **Blocks** — an optional letter per entrant, which is what makes a G1 two tables
-  instead of one.
-- **Points for a win / for a draw** — 2 and 1 by default, because that is the G1's
-  ruleset, and editable because not every league agrees.
+- **Blocks** — how many the field is split into, chosen up front. Every entrant is
+  then assigned to one **by hand**; nothing draws the blocks for you. Anyone left
+  unassigned sits in their own table.
+- **Points for a win / for a draw** — 2 and 1 by default, editable, because not every
+  league agrees.
+- **Playoff** — how a league is settled once the blocks are done: not at all (the table
+  decides), a final between the block winners, semi-finals from the top two of each
+  block, or a bracket of the best four or eight overall. Who qualifies is read off the
+  table; the matches are still yours to book.
 - **Concluded** — a flag, set by hand.
 
+A league match carries no round. A **playoff** match is the same league's match with a
+round number on it, which is what keeps a semi-final win out of the block table.
+
 **Derived, never stored:** the standings, every entrant's record within the tournament,
-the points, the finishing order, the bracket, the round names, and who has advanced.
+the points, the finishing order, who qualifies for the playoff, the bracket, the round
+names, and who has advanced. A wrestler's tournament history and their placing in each
+are counted the same way, so correcting a result re-sorts every table it appears in.
 Only *played* shows count, so a booked fixture moves nobody up the table. Correcting a
 winner corrects the table, because there is no table to correct.
 

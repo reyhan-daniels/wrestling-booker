@@ -20,7 +20,13 @@ export type EditableSegment = {
 };
 
 export type PickableTitle = { id: string; name: string; companyName: string };
-export type PickableTournament = { id: string; name: string; isBracket: boolean };
+export type PickableTournament = {
+  id: string;
+  name: string;
+  /** A bracket, or a league with a playoff — either way, rounds mean something. */
+  usesRounds: boolean;
+  isLeague: boolean;
+};
 
 function Submit({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -137,22 +143,39 @@ export function SegmentEditor({
                 ))}
               </select>
 
-              {/* Only a bracket needs a round; a league is one flat table. */}
-              {tournament?.isBracket && (
+              {/* The round is what makes a match a playoff match rather than a
+                  block match, so a league with a playoff needs it too. */}
+              {tournament?.usesRounds && (
                 <div className="mt-2">
                   <label className="label" htmlFor={`round-${segment?.id ?? "new"}`}>
-                    Round
+                    {tournament.isLeague ? "Stage" : "Round"}
                   </label>
-                  <input
-                    id={`round-${segment?.id ?? "new"}`}
-                    type="number"
-                    name="tournamentRound"
-                    min={1}
-                    defaultValue={segment?.tournamentRound ?? 1}
-                    className="field"
-                  />
+                  {tournament.isLeague ? (
+                    <select
+                      id={`round-${segment?.id ?? "new"}`}
+                      name="tournamentRound"
+                      defaultValue={String(segment?.tournamentRound ?? "")}
+                      className="field"
+                    >
+                      <option value="">Block match</option>
+                      {[1, 2, 3].map((round) => (
+                        <option key={round} value={round}>Playoff round {round}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      id={`round-${segment?.id ?? "new"}`}
+                      type="number"
+                      name="tournamentRound"
+                      min={1}
+                      defaultValue={segment?.tournamentRound ?? 1}
+                      className="field"
+                    />
+                  )}
                   <p className="mt-1 text-xs text-ink-500">
-                    1 is the first round. The bracket names itself from how deep it goes.
+                    {tournament.isLeague
+                      ? "A block match feeds the table. A playoff match does not."
+                      : "1 is the first round. The bracket names itself from how deep it goes."}
                   </p>
                 </div>
               )}

@@ -69,6 +69,19 @@ export const TITLE_HOLDER_OPTIONS = [
   { value: 3, label: "Trios" },
 ] as const;
 
+export const PLAYOFF_LABELS = {
+  NONE: "None — the table decides it",
+  BLOCK_WINNERS: "Final between the block winners",
+  TOP_TWO_PER_BLOCK: "Semi-finals from the top two of each block",
+  TOP_FOUR_OVERALL: "Bracket of the best four overall",
+  TOP_EIGHT_OVERALL: "Bracket of the best eight overall",
+} as const;
+
+/** A, B, C … for however many blocks a league is split into. */
+export function blockLetters(count: number): string[] {
+  return Array.from({ length: Math.max(1, count) }, (_, i) => String.fromCharCode(65 + i));
+}
+
 export const TOURNAMENT_FORMAT_LABELS = {
   ROUND_ROBIN: "Round robin",
   SINGLE_ELIMINATION: "Single elimination",

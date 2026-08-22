@@ -124,9 +124,13 @@ function segmentTypeOf(data: FormData): SegmentType {
  * they only exist in Play.
  */
 /**
- * A tournament match is an ordinary match that points at a tournament. The
- * round only means anything in a bracket, so a league match is never allowed
- * to carry one — the format is looked up rather than trusted from the form.
+ * A tournament match is an ordinary match that points at a tournament.
+ *
+ * The round is what separates a playoff match from a block match, so it is
+ * only meaningful where the tournament actually has rounds: a bracket, or a
+ * league that ends in a playoff. A league decided by its table can never carry
+ * one — and that is checked against the tournament rather than trusted from
+ * the form, so a stale round cannot creep in.
  */
 async function tournamentPlacement(data: FormData, isMatch: boolean) {
   const tournamentId = isMatch ? text(data, "tournamentId") : null;
@@ -134,15 +138,15 @@ async function tournamentPlacement(data: FormData, isMatch: boolean) {
 
   const tournament = await db.tournament.findUnique({
     where: { id: tournamentId },
-    select: { format: true },
+    select: { format: true, playoff: true },
   });
   if (!tournament) return { tournamentId: null, tournamentRound: null };
 
   const round = integer(data, "tournamentRound");
-  const isBracket = tournament.format === "SINGLE_ELIMINATION";
+  const hasRounds = tournament.format === "SINGLE_ELIMINATION" || tournament.playoff !== "NONE";
   return {
     tournamentId,
-    tournamentRound: isBracket && round && round > 0 ? round : null,
+    tournamentRound: hasRounds && round && round > 0 ? round : null,
   };
 }
 

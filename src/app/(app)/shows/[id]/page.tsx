@@ -54,7 +54,7 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
     // A concluded tournament is no longer something you can book into.
     db.tournament.findMany({
       where: { worldId: world.id, isComplete: false },
-      select: { id: true, name: true, format: true },
+      select: { id: true, name: true, format: true, playoff: true },
       orderBy: [{ startsOn: "desc" }, { name: "asc" }],
     }),
   ]);
@@ -62,7 +62,8 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
   const pickableTournaments = openTournaments.map((tournament) => ({
     id: tournament.id,
     name: tournament.name,
-    isBracket: tournament.format === "SINGLE_ELIMINATION",
+    usesRounds: tournament.format === "SINGLE_ELIMINATION" || tournament.playoff !== "NONE",
+    isLeague: tournament.format === "ROUND_ROBIN",
   }));
 
   // Contracts govern display, not eligibility: the home roster sorts to the

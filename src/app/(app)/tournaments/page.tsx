@@ -29,14 +29,18 @@ export default async function TournamentsPage() {
     <div>
       <PageHeader
         title="Tournaments"
-        subtitle={`${tournaments.length} in this world`}
+        subtitle={
+          tournaments.length === 0
+            ? undefined
+            : `${tournaments.filter((t) => !t.isComplete).length} running · ${tournaments.filter((t) => t.isComplete).length} in the books`
+        }
         action={<Link href="/tournaments/new" className="btn-primary">New</Link>}
       />
 
       {tournaments.length === 0 ? (
         <Empty>
           No tournaments yet.{" "}
-          <Link href="/tournaments/new" className="text-plan-300 underline">Run a G1.</Link>
+          <Link href="/tournaments/new" className="text-plan-300 underline">Set one up.</Link>
         </Empty>
       ) : (
         <ul className="grid gap-2 lg:grid-cols-2 2xl:grid-cols-3">

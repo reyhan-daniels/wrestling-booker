@@ -407,6 +407,20 @@ model SegmentParticipant {
 // Tournaments — a league or a bracket, laid over ordinary matches
 // ---------------------------------------------------------------------------
 
+/// What happens after a league's block matches are done.
+enum PlayoffFormat {
+  /// The table decides it outright.
+  NONE
+  /// One match: whoever tops each block.
+  BLOCK_WINNERS
+  /// Semi-finals from the top two of every block.
+  TOP_TWO_PER_BLOCK
+  /// A bracket of the best four across all blocks.
+  TOP_FOUR_OVERALL
+  /// A bracket of the best eight across all blocks.
+  TOP_EIGHT_OVERALL
+}
+
 enum TournamentFormat {
   /// Everyone in a block meets everyone else; points decide it.
   ROUND_ROBIN
@@ -433,10 +447,18 @@ model Tournament {
   color  String?
   notes  String?
 
-  /// League scoring. Two for a win and one for a draw is the G1's ruleset,
-  /// and the default here; it is editable because not every league agrees.
+  /// League scoring. Two for a win and one for a draw is the usual ruleset and
+  /// the default here; it is editable because not every league agrees.
   pointsWin  Int @default(2)
   pointsDraw Int @default(1)
+
+  /// How many blocks the field is split into. Entrants are assigned by hand —
+  /// nothing here draws the blocks for you.
+  blockCount Int @default(1)
+
+  /// How a league is settled once the blocks are done. Who qualifies falls out
+  /// of the table; the matches themselves are still yours to book.
+  playoff PlayoffFormat @default(NONE)
 
   startsOn DateTime? @db.Date
   endsOn   DateTime? @db.Date
@@ -467,7 +489,7 @@ model TournamentEntrant {
   groupId    String?
   group      Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
-  /// "A", "B" … for a league split into blocks. Null means one single block.
+  /// "A", "B" … matching the tournament's block count. Null means unassigned.
   block String?
 
   order Int @default(0)

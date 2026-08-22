@@ -643,3 +643,106 @@ export const tournamentInclude = {
     orderBy: [{ show: { date: "asc" } }, { order: "asc" }],
   },
 } satisfies Prisma.TournamentInclude;
+
+/**
+ * A league's matches split in two. Block matches carry no round; a playoff
+ * match does, which lets the same bracket machinery read both formats.
+ */
+export function splitLeague<T extends { tournamentRound: number | null }>(segments: T[]) {
+  return {
+    blockStage: segments.filter((s) => s.tournamentRound === null),
+    playoff: segments.filter((s) => s.tournamentRound !== null),
+  };
+}
+
+export type Qualification = {
+  /** Who would go through as the table stands. */
+  qualifiers: Competitor[];
+  /** Every booked block match has been played. */
+  blocksFinished: boolean;
+  label: string;
+};
+
+/**
+ * Who a league's playoff would be contested between. Read off the table, so it
+ * updates the moment a result does — and it is only ever a statement about the
+ * standings. Booking the playoff is still yours to do.
+ */
+export function qualifiersFrom(
+  blocks: { block: string | null; standings: Standing[] }[],
+  segments: { tournamentRound: number | null; show: { isFinalized: boolean } }[],
+  playoff: string,
+): Qualification {
+  const { blockStage } = splitLeague(segments);
+  const blocksFinished = blockStage.length > 0 && blockStage.every((s) => s.show.isFinalized);
+
+  const topOf = (n: number) => blocks.flatMap(({ standings }) => standings.slice(0, n));
+  const overall = (n: number) =>
+    blocks
+      .flatMap(({ standings }) => standings)
+      .sort((a, b) => b.points - a.points || b.wins - a.wins || a.name.localeCompare(b.name))
+      .slice(0, n);
+
+  switch (playoff) {
+    case "BLOCK_WINNERS":
+      return { qualifiers: topOf(1), blocksFinished, label: "Final" };
+    case "TOP_TWO_PER_BLOCK":
+      return { qualifiers: topOf(2), blocksFinished, label: "Semi-finals" };
+    case "TOP_FOUR_OVERALL":
+      return { qualifiers: overall(4), blocksFinished, label: "Semi-finals" };
+    case "TOP_EIGHT_OVERALL":
+      return { qualifiers: overall(8), blocksFinished, label: "Quarter-finals" };
+    default:
+      return { qualifiers: [], blocksFinished, label: "" };
+  }
+}
+
+/**
+ * Every tournament a wrestler (or a unit) has been part of, with how they
+ * placed. Placement is counted from the table, never recorded — so a corrected
+ * result moves them up or down here too.
+ */
+export async function getTournamentHistory(memberIds: string[], worldId: string) {
+  if (memberIds.length === 0) return [];
+
+  const tournaments = await db.tournament.findMany({
+    where: {
+      worldId,
+      entrants: {
+        some: memberIds.length === 1
+          ? { OR: [{ wrestlerId: memberIds[0] }, { group: { members: { some: { id: memberIds[0] } } } }] }
+          : { group: { members: { every: { id: { in: memberIds } } } } },
+      },
+    },
+    include: tournamentInclude,
+    orderBy: [{ startsOn: "desc" }, { createdAt: "desc" }],
+  });
+
+  return tournaments.map((tournament) => {
+    const competitors = competitorsOf(tournament);
+    const { blockStage } = splitLeague(tournament.segments);
+    const counted =
+      tournament.format === "ROUND_ROBIN" && blockStage.length > 0 ? blockStage : tournament.segments;
+    const table = standingsFrom(competitors, counted, tournament);
+
+    // Which row is "theirs" — their own, or the unit they were in.
+    const mine = table.find((row) => row.memberIds.some((id) => memberIds.includes(id)));
+    const block = mine?.block ?? null;
+    const within = block === null ? table : table.filter((row) => row.block === block);
+
+    return {
+      id: tournament.id,
+      name: tournament.name,
+      format: tournament.format,
+      isComplete: tournament.isComplete,
+      startsOn: tournament.startsOn,
+      block,
+      as: mine?.name ?? null,
+      isUnit: mine?.isUnit ?? false,
+      place: mine ? within.findIndex((row) => row.entrantId === mine.entrantId) + 1 : null,
+      of: within.length,
+      record: mine ? { wins: mine.wins, losses: mine.losses, draws: mine.draws } : null,
+      points: mine?.points ?? 0,
+    };
+  });
+}

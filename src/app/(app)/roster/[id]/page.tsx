@@ -3,7 +3,14 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { ALIGNMENT_LABELS, unitKind } from "@/lib/constants";
 import { formatDate, todayISO } from "@/lib/dates";
-import { formatRecord, getCurrentChampions, getMatchesFor, getTopOpponents, recordFrom } from "@/lib/derive";
+import {
+  formatRecord,
+  getCurrentChampions,
+  getMatchesFor,
+  getTopOpponents,
+  getTournamentHistory,
+  recordFrom,
+} from "@/lib/derive";
 import { getActiveWorld } from "@/lib/world";
 import { BackLink, Empty, PageHeader } from "@/components/ui";
 import { PeekHeadToHead, PeekShowButton, PeekTitleBelt } from "@/components/peek/peek-triggers";
@@ -30,7 +37,7 @@ export default async function WrestlerPage({ params }: PageProps<"/roster/[id]">
   if (!wrestler) notFound();
 
   const world = await getActiveWorld();
-  const [rows, opponents, champions, companies, upcoming] = await Promise.all([
+  const [rows, opponents, champions, companies, upcoming, tournaments] = await Promise.all([
     getMatchesFor(id),
     getTopOpponents(id, 6),
     getCurrentChampions(undefined, wrestler.worldId),
@@ -41,6 +48,7 @@ export default async function WrestlerPage({ params }: PageProps<"/roster/[id]">
       orderBy: { show: { date: "asc" } },
       take: 6,
     }),
+    getTournamentHistory([id], wrestler.worldId),
   ]);
 
   const record = recordFrom(rows, id);
@@ -276,6 +284,39 @@ export default async function WrestlerPage({ params }: PageProps<"/roster/[id]">
             </section>
           )}
 
+          {tournaments.length > 0 && (
+            <section className="card p-4">
+              <p className="section-title mb-3">Tournaments</p>
+              <ul className="space-y-1.5">
+                {tournaments.map((entry) => (
+                  <li key={entry.id} className="rounded-lg border border-ink-800 bg-ink-900 px-3 py-2">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <Link href={`/tournaments/${entry.id}`} className="truncate text-sm hover:text-plan-300">
+                        {entry.name}
+                      </Link>
+                      {entry.place && (
+                        <span
+                          className={`stat shrink-0 ${entry.place === 1 ? "text-played-300" : "text-ink-400"}`}
+                        >
+                          {ordinal(entry.place)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 truncate text-xs text-ink-500">
+                      {entry.block ? `Block ${entry.block} · ` : ""}
+                      {entry.record
+                        ? `${entry.record.wins}-${entry.record.losses}${entry.record.draws ? `-${entry.record.draws}` : ""}`
+                        : "no matches"}
+                      {entry.format === "ROUND_ROBIN" ? ` · ${entry.points} pts` : ""}
+                      {entry.isUnit && entry.as ? ` · as ${entry.as}` : ""}
+                      {entry.isComplete ? "" : " · running"}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <section className="card p-4">
             <p className="section-title mb-3">Match history</p>
             {rows.length === 0 ? (
@@ -325,4 +366,11 @@ export default async function WrestlerPage({ params }: PageProps<"/roster/[id]">
       </div>
     </div>
   );
+}
+
+/** 1st, 2nd, 3rd … for a finishing position. */
+function ordinal(place: number): string {
+  const tens = place % 100;
+  if (tens >= 11 && tens <= 13) return `${place}th`;
+  return `${place}${["th", "st", "nd", "rd"][place % 10] ?? "th"}`;
 }
