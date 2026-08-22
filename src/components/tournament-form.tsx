@@ -11,6 +11,8 @@ export type Contender = {
   name: string;
   detail: string;
   isUnit: boolean;
+  /** Every promotion they are currently under contract to. Empty is a free agent. */
+  companyIds: string[];
 };
 
 type Tournament = {
@@ -52,6 +54,11 @@ export function TournamentForm({
   submitLabel: string;
 }) {
   const [format, setFormat] = useState(tournament?.format ?? "ROUND_ROBIN");
+  const [companyId, setCompanyId] = useState(tournament?.companyId ?? "");
+  // The field opens on whoever the tournament belongs to, since that is nearly
+  // always who is in it — and it follows the promotion when that changes.
+  // Still free to widen: a co-promoted cup picks from everybody.
+  const [roster, setRoster] = useState(tournament?.companyId ?? "");
   const [blockCount, setBlockCount] = useState(tournament?.blockCount ?? 1);
   const [entrants, setEntrants] = useState<{ ref: string; block: string }[]>(
     tournament?.entrants.map((raw) => {
@@ -75,6 +82,9 @@ export function TournamentForm({
 
   const matches = contenders
     .filter((c) => !chosen.has(c.ref))
+    .filter((c) =>
+      roster === "" ? true : roster === "free" ? c.companyIds.length === 0 : c.companyIds.includes(roster),
+    )
     .filter((c) => (query ? c.name.toLowerCase().includes(query.trim().toLowerCase()) : true))
     .slice(0, 40);
 
@@ -116,7 +126,16 @@ export function TournamentForm({
           </div>
           <div>
             <label className="label" htmlFor="companyId">Promotion</label>
-            <select id="companyId" name="companyId" defaultValue={tournament?.companyId ?? ""} className="field">
+            <select
+              id="companyId"
+              name="companyId"
+              value={companyId}
+              onChange={(event) => {
+                setCompanyId(event.target.value);
+                setRoster(event.target.value);
+              }}
+              className="field"
+            >
               <option value="">Nobody in particular</option>
               {companies.map((company) => (
                 <option key={company.id} value={company.id}>{company.name}</option>
@@ -208,6 +227,9 @@ export function TournamentForm({
                   <span className="min-w-0 flex-1 truncate text-sm">
                     {contender?.name ?? "Gone from the roster"}
                     {contender?.isUnit && <span className="ml-1.5 chip-muted">Unit</span>}
+                    {contender && (
+                      <span className="ml-1.5 text-[10px] text-ink-600">{contender.detail}</span>
+                    )}
                   </span>
 
                   {isLeague && blockCount > 1 && (
@@ -244,13 +266,33 @@ export function TournamentForm({
           </ul>
         )}
 
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Add a wrestler or a unit"
-          className="field"
-        />
+        <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Add a wrestler or a unit"
+            className="field"
+          />
+          <select
+            value={roster}
+            onChange={(event) => setRoster(event.target.value)}
+            aria-label="Filter the field by promotion"
+            className="field sm:w-52"
+          >
+            <option value="">Everyone</option>
+            {companies.map((company) => (
+              <option key={company.id} value={company.id}>{company.name}</option>
+            ))}
+            <option value="free">Free agents</option>
+          </select>
+        </div>
+        {matches.length === 0 && (
+          <p className="mt-2 text-xs text-ink-500">
+            Nobody left to add{roster ? " from that promotion" : ""}
+            {query ? " matching that name" : ""}.
+          </p>
+        )}
         <ul className="mt-2 flex flex-wrap gap-1.5">
           {matches.map((contender) => (
             <li key={contender.ref}>
