@@ -85,8 +85,7 @@ export function TournamentForm({
     .filter((c) =>
       roster === "" ? true : roster === "free" ? c.companyIds.length === 0 : c.companyIds.includes(roster),
     )
-    .filter((c) => (query ? c.name.toLowerCase().includes(query.trim().toLowerCase()) : true))
-    .slice(0, 40);
+    .filter((c) => (query ? c.name.toLowerCase().includes(query.trim().toLowerCase()) : true));
 
   function setBlock(ref: string, block: string) {
     setEntrants((current) => current.map((e) => (e.ref === ref ? { ...e, block } : e)));
@@ -287,13 +286,19 @@ export function TournamentForm({
             <option value="free">Free agents</option>
           </select>
         </div>
-        {matches.length === 0 && (
+        {matches.length === 0 ? (
           <p className="mt-2 text-xs text-ink-500">
             Nobody left to add{roster ? " from that promotion" : ""}
             {query ? " matching that name" : ""}.
           </p>
+        ) : (
+          // Everyone who is left, in a box that scrolls. Cutting the list short
+          // would hide people behind a search box with no way to know it.
+          <p className="mt-2 text-right text-xs text-ink-500 tabular-nums">
+            {matches.length} to choose from
+          </p>
         )}
-        <ul className="mt-2 flex flex-wrap gap-1.5">
+        <ul className="mt-2 flex max-h-64 flex-wrap gap-1.5 overflow-y-auto">
           {matches.map((contender) => (
             <li key={contender.ref}>
               <button

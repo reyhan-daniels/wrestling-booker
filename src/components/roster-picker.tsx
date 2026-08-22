@@ -52,8 +52,7 @@ export function RosterPicker({
       .filter((w) => (showRetired || !w.isRetired) && !value.includes(w.id))
       .filter((w) => (promotion ? w.companies.includes(promotion) : true))
       .filter((w) => (alignment ? w.align === alignment : true))
-      .filter((w) => (needle ? w.name.toLowerCase().includes(needle) : true))
-      .slice(0, 60);
+      .filter((w) => (needle ? w.name.toLowerCase().includes(needle) : true));
   }, [wrestlers, query, value, showRetired, promotion, alignment]);
 
   return (
@@ -183,15 +182,22 @@ export function RosterPicker({
         )}
       </div>
 
-      <label className="mt-2 flex items-center gap-2 text-xs text-ink-500">
-        <input
-          type="checkbox"
-          checked={showRetired}
-          onChange={(event) => setShowRetired(event.target.checked)}
-          className="size-3.5"
-        />
-        Include retired
-      </label>
+      {/* The list scrolls and is never cut short, so the count is the whole
+          truth about what a filter has left you. */}
+      <div className="mt-2 flex items-center justify-between gap-3 text-xs text-ink-500">
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={showRetired}
+            onChange={(event) => setShowRetired(event.target.checked)}
+            className="size-3.5"
+          />
+          Include retired
+        </label>
+        <span className="tabular-nums">
+          {matches.length} to choose from
+        </span>
+      </div>
     </div>
   );
 }
