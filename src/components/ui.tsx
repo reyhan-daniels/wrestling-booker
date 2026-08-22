@@ -47,3 +47,15 @@ export function StateChip({ isFinalized }: { isFinalized: boolean }) {
     </span>
   );
 }
+
+/**
+ * React 19 resets a form after its action runs, and a reset restores the
+ * fields to the defaults they were *mounted* with — so an in-place edit form
+ * that stays on screen snaps back to the old values even though the save
+ * succeeded. Keying the form on the record's updatedAt remounts it with the
+ * saved values as the new defaults. Only needed where the form survives the
+ * save; create forms want the reset.
+ */
+export function editKey(record: { updatedAt: Date }): string {
+  return record.updatedAt.toISOString();
+}

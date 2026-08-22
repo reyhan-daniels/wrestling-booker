@@ -4,7 +4,7 @@ import { formatDate, formatDuration } from "@/lib/dates";
 import { getTitleHistory } from "@/lib/derive";
 import { updateTitle, deleteTitle } from "@/lib/actions/companies";
 import { TITLE_HOLDER_OPTIONS, titleKind } from "@/lib/constants";
-import { BackLink, Empty, PageHeader } from "@/components/ui";
+import { BackLink, Empty, PageHeader, editKey } from "@/components/ui";
 import { PeekName } from "@/components/peek/peek-triggers";
 
 export default async function TitlePage({ params }: PageProps<"/titles/[id]">) {
@@ -125,7 +125,7 @@ export default async function TitlePage({ params }: PageProps<"/titles/[id]">) {
       <section className="card mt-4 p-4">
         <details>
           <summary className="section-title cursor-pointer">Title settings</summary>
-          <form action={updateTitle} className="mt-4 space-y-3">
+          <form key={editKey(title)} action={updateTitle} className="mt-4 space-y-3">
             <input type="hidden" name="id" value={id} />
             <div>
               <label className="label" htmlFor="name">Name</label>

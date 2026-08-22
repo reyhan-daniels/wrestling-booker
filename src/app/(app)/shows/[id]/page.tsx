@@ -5,7 +5,7 @@ import { segmentTypeLabel } from "@/lib/constants";
 import { formatDateLong, toISODate } from "@/lib/dates";
 import { getActiveWorld } from "@/lib/world";
 import { deleteShow, duplicateShow, updateShow } from "@/lib/actions/shows";
-import { BackLink, PageHeader, StateChip } from "@/components/ui";
+import { BackLink, PageHeader, StateChip, editKey } from "@/components/ui";
 import { CardView, type CardSegment } from "@/components/card-view";
 import { ColorPicker } from "@/components/color-picker";
 
@@ -160,7 +160,7 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
             </p>
           ) : (
             <>
-              <form action={updateShow} className="mt-4 space-y-3">
+              <form key={editKey(show)} action={updateShow} className="mt-4 space-y-3">
                 <input type="hidden" name="id" value={id} />
                 <div>
                   <label className="label" htmlFor="name">Name</label>

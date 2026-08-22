@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { CADENCE_LABELS, TITLE_HOLDER_OPTIONS, titleKind } from "@/lib/constants";
 import { getCurrentChampions } from "@/lib/derive";
 import { createSeries, createTitle, deleteCompany, deleteSeries, updateCompany, updateSeries } from "@/lib/actions/companies";
-import { BackLink, Empty, PageHeader, StateChip } from "@/components/ui";
+import { BackLink, Empty, PageHeader, StateChip, editKey } from "@/components/ui";
 import { PeekName } from "@/components/peek/peek-triggers";
 import { SortableTitles } from "@/components/sortable-titles";
 import { ColorPicker } from "@/components/color-picker";
@@ -121,7 +121,7 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
                     <summary className="display cursor-pointer text-[10px] tracking-widest text-ink-500">
                       Edit
                     </summary>
-                    <form action={updateSeries} className="mt-3 space-y-3">
+                    <form key={editKey(series)} action={updateSeries} className="mt-3 space-y-3">
                       <input type="hidden" name="id" value={series.id} />
                       <input name="name" required defaultValue={series.name} className="field" />
                       <div className="grid grid-cols-2 gap-3">
@@ -221,7 +221,7 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
         <section className="card p-4 lg:col-span-2">
           <details>
             <summary className="section-title cursor-pointer">Company settings</summary>
-            <form action={updateCompany} className="mt-4 space-y-3">
+            <form key={editKey(company)} action={updateCompany} className="mt-4 space-y-3">
               <input type="hidden" name="id" value={id} />
               <div>
                 <label className="label" htmlFor="name">Name</label>
