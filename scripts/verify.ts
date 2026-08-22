@@ -8,14 +8,16 @@
  *   - a successful defence leaves the reign alone
  *   - the past is immutable
  *   - a unit's kind and record are derived, never stored
+ *   - tournament standings and brackets are counted, never stored
  */
 import "dotenv/config";
 import assert from "node:assert/strict";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { applyTitleChanges } from "../src/lib/titles";
-import { getHeadToHead, getRecord, getTitleHistory, getCalendar, getUnitMatches, unitRecordFrom } from "../src/lib/derive";
-import { unitKind } from "../src/lib/constants";
+import { getHeadToHead, getRecord, getTitleHistory, getCalendar, getUnitMatches, unitRecordFrom, tournamentInclude } from "../src/lib/derive";
+import { bracketFrom, competitorsOf, standingsFrom } from "../src/lib/derive";
+import { roundName, unitKind } from "../src/lib/constants";
 import { parseISODate } from "../src/lib/dates";
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
@@ -295,6 +297,119 @@ async function main() {
     });
     check("adding a member re-derives the kind with no field to update", () => {
       assert.equal(unitKind(grown.members.length), "Trio");
+    });
+
+    // --- tournaments -------------------------------------------------------
+    //
+    // A four-man league whose matches are the ones already played above, plus
+    // one still to come. Standings must count only what has been played.
+    const league = await db.tournament.create({
+      data: {
+        worldId: world.id,
+        name: "Verify Cup",
+        format: "ROUND_ROBIN",
+        entrants: {
+          create: [
+            { wrestlerId: ace.id, block: "A", order: 0 },
+            { wrestlerId: rival.id, block: "A", order: 1 },
+            { wrestlerId: third.id, block: "B", order: 2 },
+            { wrestlerId: fourth.id, block: "B", order: 3 },
+          ],
+        },
+      },
+    });
+
+    // Night One (Ace beat Rival) and Night Three (Rival beat Ace) are league
+    // matches; a fifth, unplayed, is booked.
+    await db.segment.updateMany({
+      where: { showId: { in: [showOne.id, showThree.id] } },
+      data: { tournamentId: league.id },
+    });
+    const pending = await db.show.create({
+      data: {
+        worldId: world.id,
+        name: "Night Five",
+        date: parseISODate("2026-05-10"),
+        companies: { connect: [{ id: company.id }] },
+        segments: {
+          create: [
+            {
+              order: 1,
+              type: "MATCH",
+              tournamentId: league.id,
+              participants: {
+                create: [{ wrestlerId: third.id, order: 0 }, { wrestlerId: fourth.id, order: 1 }],
+              },
+            },
+          ],
+        },
+      },
+      include: { segments: true },
+    });
+    // Give the unplayed match a winner it has no business having yet.
+    await db.segmentParticipant.updateMany({
+      where: { segmentId: pending.segments[0].id, wrestlerId: third.id },
+      data: { isWinner: true },
+    });
+
+    const loaded = await db.tournament.findUniqueOrThrow({
+      where: { id: league.id },
+      include: tournamentInclude,
+    });
+    const field = competitorsOf(loaded);
+    const table = standingsFrom(field, loaded.segments, loaded);
+
+    check("a league table counts only played matches", () => {
+      const third_ = table.find((row) => row.name === "Third")!;
+      // Third's only league match is booked, not played.
+      assert.equal(third_.played, 0);
+      assert.equal(third_.points, 0);
+    });
+
+    check("points come from the tournament's own scoring", () => {
+      const aceRow = table.find((row) => row.name === "Ace")!;
+      const rivalRow = table.find((row) => row.name === "Rival")!;
+      assert.equal(aceRow.wins, 1);
+      assert.equal(aceRow.losses, 1);
+      assert.equal(aceRow.points, 2); // one win at the default 2
+      assert.equal(rivalRow.points, 2);
+    });
+
+    check("blocks come off the entrants, not a stored table", () => {
+      assert.deepEqual(
+        table.filter((row) => row.block === "A").map((row) => row.name).sort(),
+        ["Ace", "Rival"],
+      );
+    });
+
+    // The same matches read as a bracket when the format says so.
+    await db.tournament.update({ where: { id: league.id }, data: { format: "SINGLE_ELIMINATION" } });
+    await db.segment.updateMany({ where: { showId: showOne.id }, data: { tournamentRound: 1 } });
+    await db.segment.updateMany({ where: { showId: showThree.id }, data: { tournamentRound: 2 } });
+    await db.segment.updateMany({ where: { showId: pending.id }, data: { tournamentRound: 3 } });
+
+    const asBracket = await db.tournament.findUniqueOrThrow({
+      where: { id: league.id },
+      include: tournamentInclude,
+    });
+    const bracket = bracketFrom(competitorsOf(asBracket), asBracket.segments, roundName);
+
+    check("a bracket is read off the rounds that were booked", () => {
+      assert.deepEqual(bracket.rounds.map((r) => r.round), [1, 2, 3]);
+      assert.equal(bracket.rounds[0].winners.map((w) => w.name).join(), "Ace");
+      assert.equal(bracket.rounds[1].winners.map((w) => w.name).join(), "Rival");
+    });
+
+    check("an unplayed round advances nobody", () => {
+      // Round 3 has a winner flagged but its show is not finalized.
+      assert.equal(bracket.rounds[2].isComplete, false);
+      assert.equal(bracket.rounds[2].winners.length, 0);
+      assert.equal(bracket.advancing.length, 0);
+    });
+
+    check("the last round is named the final, whatever its number", () => {
+      assert.equal(roundName(3, 3), "Final");
+      assert.equal(roundName(2, 3), "Semi-finals");
     });
 
     // A show that was played is history and stays that way.

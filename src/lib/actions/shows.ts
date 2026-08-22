@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { SegmentType } from "@/generated/prisma/enums";
-import { bool, list, requiredDate, requiredText, text } from "@/lib/form";
+import { bool, integer, list, requiredDate, requiredText, text } from "@/lib/form";
 import { parseISODate } from "@/lib/dates";
 import { episodeNumberFor } from "@/lib/derive";
 import { getActiveWorld } from "@/lib/world";
@@ -123,6 +123,29 @@ function segmentTypeOf(data: FormData): SegmentType {
  * Booking = choosing participants. Winners are deliberately not settable here;
  * they only exist in Play.
  */
+/**
+ * A tournament match is an ordinary match that points at a tournament. The
+ * round only means anything in a bracket, so a league match is never allowed
+ * to carry one — the format is looked up rather than trusted from the form.
+ */
+async function tournamentPlacement(data: FormData, isMatch: boolean) {
+  const tournamentId = isMatch ? text(data, "tournamentId") : null;
+  if (!tournamentId) return { tournamentId: null, tournamentRound: null };
+
+  const tournament = await db.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { format: true },
+  });
+  if (!tournament) return { tournamentId: null, tournamentRound: null };
+
+  const round = integer(data, "tournamentRound");
+  const isBracket = tournament.format === "SINGLE_ELIMINATION";
+  return {
+    tournamentId,
+    tournamentRound: isBracket && round && round > 0 ? round : null,
+  };
+}
+
 export async function addSegment(data: FormData) {
   const showId = requiredText(data, "showId", "Show");
   await assertEditable(showId);
@@ -147,6 +170,7 @@ export async function addSegment(data: FormData) {
       isTitleMatch: isMatch && bool(data, "isTitleMatch"),
       titleId: isMatch && bool(data, "isTitleMatch") ? text(data, "titleId") : null,
       stipulation: isMatch ? text(data, "stipulation") : null,
+      ...(await tournamentPlacement(data, isMatch)),
       participants: {
         create: participantIds.map((wrestlerId, index) => ({ wrestlerId, order: index })),
       },
@@ -164,6 +188,7 @@ export async function updateSegment(data: FormData) {
   const type = segmentTypeOf(data);
   const isMatch = type === SegmentType.MATCH;
   const participantIds = list(data, "participantIds");
+  const placement = await tournamentPlacement(data, isMatch);
 
   await db.$transaction(async (tx) => {
     await tx.segment.update({
@@ -175,6 +200,7 @@ export async function updateSegment(data: FormData) {
         isTitleMatch: isMatch && bool(data, "isTitleMatch"),
         titleId: isMatch && bool(data, "isTitleMatch") ? text(data, "titleId") : null,
         stipulation: isMatch ? text(data, "stipulation") : null,
+        ...placement,
       },
     });
 

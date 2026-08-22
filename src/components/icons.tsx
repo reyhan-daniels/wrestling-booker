@@ -82,6 +82,16 @@ export function IconUnits({ className }: Props) {
   );
 }
 
+/** A bracket narrowing to one. */
+export function IconTournament({ className }: Props) {
+  return (
+    <Svg className={className}>
+      <path d="M3 5h5v5H3zM3 14h5v5H3zM16 9.5h5v5h-5z" />
+      <path d="M8 7.5h3.5v9H8M11.5 12H16" />
+    </Svg>
+  );
+}
+
 export function IconSettings({ className }: Props) {
   return (
     <Svg className={className}>

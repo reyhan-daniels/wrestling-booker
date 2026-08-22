@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { Cadence } from "@/generated/prisma/enums";
-import { bool, date, list, requiredDate, requiredText, text } from "@/lib/form";
+import { bool, date, integer, list, requiredDate, requiredText, text } from "@/lib/form";
 import { getActiveWorld } from "@/lib/world";
 
 export async function createCompany(data: FormData) {
@@ -53,12 +53,19 @@ export async function deleteCompany(data: FormData) {
 
 // --- Titles -----------------------------------------------------------------
 
+/** 1 singles, 2 tag, 3 trios. Clamped rather than rejected. */
+function holdersOf(data: FormData): number {
+  const value = integer(data, "holderCount") ?? 1;
+  return Math.min(Math.max(value, 1), 8);
+}
+
 export async function createTitle(data: FormData) {
   const companyId = requiredText(data, "companyId", "Company");
   await db.title.create({
     data: {
       companyId,
       name: requiredText(data, "name", "Name"),
+      holderCount: holdersOf(data),
       notes: text(data, "notes"),
     },
   });
@@ -73,6 +80,7 @@ export async function updateTitle(data: FormData) {
     data: {
       name: requiredText(data, "name", "Name"),
       isActive: bool(data, "isActive"),
+      holderCount: holdersOf(data),
       notes: text(data, "notes"),
     },
   });

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { usePeek } from "@/components/peek/peek-provider";
 import { SortableList } from "@/components/sortable-list";
-import { SegmentEditor, type EditableSegment, type PickableTitle } from "@/components/segment-editor";
+import { SegmentEditor, type EditableSegment, type PickableTitle, type PickableTournament } from "@/components/segment-editor";
 import type { PickableWrestler } from "@/components/roster-picker";
 import { addSegment, deleteSegment, reorderSegments, updateSegment } from "@/lib/actions/shows";
 
@@ -25,12 +25,14 @@ export function CardView({
   segments,
   wrestlers,
   titles,
+  tournaments,
 }: {
   showId: string;
   isFinalized: boolean;
   segments: CardSegment[];
   wrestlers: PickableWrestler[];
   titles: PickableTitle[];
+  tournaments: PickableTournament[];
 }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
@@ -138,6 +140,7 @@ export function CardView({
                     showId={showId}
                     wrestlers={wrestlers}
                     titles={titles}
+                    tournaments={tournaments}
                     segment={segment}
                     submitLabel="Save segment"
                     onDone={() => setEditing(null)}
@@ -174,6 +177,7 @@ export function CardView({
                 showId={showId}
                 wrestlers={wrestlers}
                 titles={titles}
+                tournaments={tournaments}
                 submitLabel="Add to card"
               />
             </div>

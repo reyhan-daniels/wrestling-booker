@@ -55,6 +55,37 @@ export const GENDER_LABELS = {
   OTHER: "Other",
 } as const;
 
+/** A belt held by more than one person. Same shape as `unitKind`. */
+export function titleKind(holderCount: number): string {
+  if (holderCount >= 4) return "Faction";
+  if (holderCount === 3) return "Trios";
+  if (holderCount === 2) return "Tag team";
+  return "Singles";
+}
+
+export const TITLE_HOLDER_OPTIONS = [
+  { value: 1, label: "Singles" },
+  { value: 2, label: "Tag team" },
+  { value: 3, label: "Trios" },
+] as const;
+
+export const TOURNAMENT_FORMAT_LABELS = {
+  ROUND_ROBIN: "Round robin",
+  SINGLE_ELIMINATION: "Single elimination",
+} as const;
+
+/**
+ * Bracket rounds are named backwards from the end, so a round's name depends
+ * on how many rounds there are — never stored, always counted.
+ */
+export function roundName(round: number, totalRounds: number): string {
+  const fromEnd = totalRounds - round;
+  if (fromEnd === 0) return "Final";
+  if (fromEnd === 1) return "Semi-finals";
+  if (fromEnd === 2) return "Quarter-finals";
+  return `Round ${round}`;
+}
+
 export const CADENCE_LABELS = {
   WEEKLY: "Weekly",
   BIWEEKLY: "Every 2 weeks",

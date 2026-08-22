@@ -131,6 +131,31 @@ Fields:
 record. A unit's match is a played match where *every* member appeared **on the same
 side**; members on opposite sides are the unit imploding, and count for neither.
 
+### Tournament
+A league or a bracket laid over ordinary matches. A tournament match *is* an ordinary
+match — it counts towards records and reigns like any other — it simply also points at
+the tournament it belongs to.
+
+Fields:
+- **Name**, **Colour**, **Notes**
+- **Format** — round robin or single elimination.
+- **Promotion** — optional; a tournament can be co-promoted or belong to nobody.
+- **Field** — entrants, each one a wrestler *or* a unit. A tag league is a league whose
+  entrants are units.
+- **Blocks** — an optional letter per entrant, which is what makes a G1 two tables
+  instead of one.
+- **Points for a win / for a draw** — 2 and 1 by default, because that is the G1's
+  ruleset, and editable because not every league agrees.
+- **Concluded** — a flag, set by hand.
+
+**Derived, never stored:** the standings, every entrant's record within the tournament,
+the points, the finishing order, the bracket, the round names, and who has advanced.
+Only *played* shows count, so a booked fixture moves nobody up the table. Correcting a
+winner corrects the table, because there is no table to correct.
+
+Nothing advances on its own. When a bracket round is complete the tournament page says
+who came through and offers a link to go and book the next one — it never books it.
+
 ### Company
 A promotion.
 
@@ -167,8 +192,14 @@ A title is a **spine of reigns**. It is not "a current champion field" — it is
 ordered list of every reign. The current champion is simply the most recent *open*
 reign.
 
+**Held by** — how many people hold it: 1 singles, 2 tag team, 3 trios. A count rather
+than a list of kinds, so a belt for a four-person unit needs no new case. Nothing
+enforces it when a match is played: a tag belt *can* be won short-handed, and the tool
+records what happened rather than what should have. The title page says so plainly when
+the two disagree.
+
 A **Reign** (derived from title-match results, never typed by hand):
-- Holder (wrestler)
+- Holders — everyone who won it. Usually one; two for a tag belt, three for trios.
 - Start date + the event it started at
 - End date + end event (empty while the reign is open)
 - Length (derived)

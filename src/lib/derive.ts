@@ -8,6 +8,7 @@
 
 import { db } from "@/lib/db";
 import { SegmentType, Cadence } from "@/generated/prisma/enums";
+import type { Prisma } from "@/generated/prisma/client";
 import { addDays, addMonths, daysBetween, toISODate } from "@/lib/dates";
 
 export type MatchRow = {
@@ -449,3 +450,196 @@ export function unitRecordFrom(rows: MatchRow[], memberIds: string[]): WinLoss {
 export async function getUnitRecord(memberIds: string[]): Promise<WinLoss> {
   return unitRecordFrom(await getUnitMatches(memberIds), memberIds);
 }
+
+// ---------------------------------------------------------------------------
+// Tournaments — standings and brackets, counted rather than stored
+// ---------------------------------------------------------------------------
+//
+// A tournament stores its field and its scoring. Everything you actually want
+// to look at — points, order, who has advanced, who is still to come — is
+// counted here from the matches, so there is no standings table to fall out of
+// step with a result, and correcting a winner corrects the table.
+
+export type Competitor = {
+  entrantId: string;
+  /** A wrestler is one id; a unit is all of its members. */
+  memberIds: string[];
+  name: string;
+  block: string | null;
+  isUnit: boolean;
+};
+
+export type Standing = Competitor & {
+  played: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  points: number;
+};
+
+type TournamentSegment = {
+  id: string;
+  tournamentRound: number | null;
+  show: { id: string; name: string; date: Date; isFinalized: boolean };
+  participants: { isWinner: boolean; wrestler: { id: string; name: string } }[];
+};
+
+/**
+ * How one competitor fared in one match. `null` means they were not in it —
+ * and for a unit, "not in it" includes the case where its members were split
+ * across both sides, which is the unit imploding rather than competing.
+ */
+export function outcomeFor(
+  segment: TournamentSegment,
+  competitor: Competitor,
+): "win" | "loss" | "draw" | null {
+  const mine = segment.participants.filter((p) => competitor.memberIds.includes(p.wrestler.id));
+  if (mine.length !== competitor.memberIds.length) return null;
+  if (!mine.every((p) => p.isWinner === mine[0].isWinner)) return null;
+
+  const decided = segment.participants.some((p) => p.isWinner);
+  if (!decided) return "draw";
+  return mine[0].isWinner ? "win" : "loss";
+}
+
+export function competitorsOf(tournament: {
+  entrants: {
+    id: string;
+    block: string | null;
+    wrestler: { id: string; name: string } | null;
+    group: { id: string; name: string; members: { id: string }[] } | null;
+  }[];
+}): Competitor[] {
+  return tournament.entrants.flatMap<Competitor>((entrant) => {
+    if (entrant.wrestler) {
+      return [{
+        entrantId: entrant.id,
+        memberIds: [entrant.wrestler.id],
+        name: entrant.wrestler.name,
+        block: entrant.block,
+        isUnit: false,
+      }];
+    }
+    if (entrant.group) {
+      return [{
+        entrantId: entrant.id,
+        memberIds: entrant.group.members.map((m) => m.id),
+        name: entrant.group.name,
+        block: entrant.block,
+        isUnit: true,
+      }];
+    }
+    // The database forbids this, but the type does not.
+    return [];
+  });
+}
+
+/**
+ * League table. Only finalized shows count — a booked match is a fixture, not
+ * a result, so it moves nobody up the table.
+ */
+export function standingsFrom(
+  competitors: Competitor[],
+  segments: TournamentSegment[],
+  scoring: { pointsWin: number; pointsDraw: number },
+): Standing[] {
+  const played = segments.filter((s) => s.show.isFinalized);
+
+  return competitors
+    .map((competitor) => {
+      let wins = 0;
+      let losses = 0;
+      let draws = 0;
+      for (const segment of played) {
+        const outcome = outcomeFor(segment, competitor);
+        if (outcome === "win") wins += 1;
+        else if (outcome === "loss") losses += 1;
+        else if (outcome === "draw") draws += 1;
+      }
+      return {
+        ...competitor,
+        played: wins + losses + draws,
+        wins,
+        losses,
+        draws,
+        points: wins * scoring.pointsWin + draws * scoring.pointsDraw,
+      };
+    })
+    .sort((a, b) => b.points - a.points || b.wins - a.wins || a.name.localeCompare(b.name));
+}
+
+/** Standings split into the blocks the entrants were assigned to. */
+export function blocksFrom(standings: Standing[]): { block: string | null; standings: Standing[] }[] {
+  const names = [...new Set(standings.map((s) => s.block))].sort((a, b) =>
+    a === null ? -1 : b === null ? 1 : a.localeCompare(b),
+  );
+  return names.map((block) => ({ block, standings: standings.filter((s) => s.block === block) }));
+}
+
+export type BracketRound = {
+  round: number;
+  segments: TournamentSegment[];
+  /** Named from the end, so the last round is always the final. */
+  label: string;
+  winners: Competitor[];
+  isComplete: boolean;
+};
+
+/**
+ * The bracket as booked. Rounds are whatever rounds have matches in them —
+ * nothing is generated ahead of time, because generating a round would be the
+ * tool booking a match on your behalf.
+ */
+export function bracketFrom(
+  competitors: Competitor[],
+  segments: TournamentSegment[],
+  label: (round: number, total: number) => string,
+): { rounds: BracketRound[]; advancing: Competitor[]; nextRound: number } {
+  const rounds = [...new Set(segments.map((s) => s.tournamentRound ?? 1))].sort((a, b) => a - b);
+  // The size of the field says how many rounds it *should* take, so a final
+  // can be called a final before the semi-finals have been booked.
+  const expected = competitors.length > 1 ? Math.ceil(Math.log2(competitors.length)) : 1;
+  const total = Math.max(expected, rounds.at(-1) ?? 1);
+
+  const built = rounds.map((round) => {
+    const inRound = segments.filter((s) => (s.tournamentRound ?? 1) === round);
+    const winners = competitors.filter((competitor) =>
+      inRound.some((segment) => segment.show.isFinalized && outcomeFor(segment, competitor) === "win"),
+    );
+    return {
+      round,
+      segments: inRound,
+      label: label(round, total),
+      winners,
+      isComplete: inRound.length > 0 && inRound.every((s) => s.show.isFinalized),
+    };
+  });
+
+  // Who is waiting on a match that has not been booked yet. This is a prompt,
+  // never an action: the tool will not book the next round for you.
+  const last = built.at(-1);
+  const nextRound = (last?.round ?? 0) + 1;
+  const advancing = last?.isComplete ? last.winners : [];
+
+  return { rounds: built, advancing, nextRound };
+}
+
+export const tournamentInclude = {
+  entrants: {
+    orderBy: { order: "asc" },
+    include: {
+      wrestler: { select: { id: true, name: true } },
+      group: { select: { id: true, name: true, members: { select: { id: true } } } },
+    },
+  },
+  segments: {
+    include: {
+      show: { select: { id: true, name: true, date: true, isFinalized: true } },
+      participants: {
+        orderBy: { order: "asc" },
+        include: { wrestler: { select: { id: true, name: true } } },
+      },
+    },
+    orderBy: [{ show: { date: "asc" } }, { order: "asc" }],
+  },
+} satisfies Prisma.TournamentInclude;

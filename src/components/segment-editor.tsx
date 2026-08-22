@@ -13,11 +13,14 @@ export type EditableSegment = {
   note: string | null;
   isTitleMatch: boolean;
   titleId: string | null;
+  tournamentId: string | null;
+  tournamentRound: number | null;
   stipulation: string | null;
   participantIds: string[];
 };
 
 export type PickableTitle = { id: string; name: string; companyName: string };
+export type PickableTournament = { id: string; name: string; isBracket: boolean };
 
 function Submit({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -37,6 +40,7 @@ export function SegmentEditor({
   showId,
   wrestlers,
   titles,
+  tournaments,
   segment,
   submitLabel,
   onDone,
@@ -45,6 +49,7 @@ export function SegmentEditor({
   showId: string;
   wrestlers: PickableWrestler[];
   titles: PickableTitle[];
+  tournaments: PickableTournament[];
   segment?: EditableSegment;
   submitLabel: string;
   onDone?: () => void;
@@ -52,6 +57,9 @@ export function SegmentEditor({
   const [type, setType] = useState(segment?.type ?? "MATCH");
   const [participants, setParticipants] = useState<string[]>(segment?.participantIds ?? []);
   const [isTitleMatch, setIsTitleMatch] = useState(segment?.isTitleMatch ?? false);
+  const [tournamentId, setTournamentId] = useState(segment?.tournamentId ?? "");
+
+  const tournament = tournaments.find((t) => t.id === tournamentId);
 
   const isMatch = type === "MATCH";
 
@@ -110,6 +118,46 @@ export function SegmentEditor({
             <span className="label">Stipulation</span>
             <PickList name="stipulation" options={STIPULATIONS} defaultValue={segment?.stipulation} placeholder="Standard match" />
           </div>
+
+          {tournaments.length > 0 && (
+            <div className="rounded-lg border border-plan-500/25 bg-plan-500/5 p-3">
+              <label className="label" htmlFor={`tournament-${segment?.id ?? "new"}`}>
+                Tournament
+              </label>
+              <select
+                id={`tournament-${segment?.id ?? "new"}`}
+                name="tournamentId"
+                value={tournamentId}
+                onChange={(event) => setTournamentId(event.target.value)}
+                className="field"
+              >
+                <option value="">Not a tournament match</option>
+                {tournaments.map((option) => (
+                  <option key={option.id} value={option.id}>{option.name}</option>
+                ))}
+              </select>
+
+              {/* Only a bracket needs a round; a league is one flat table. */}
+              {tournament?.isBracket && (
+                <div className="mt-2">
+                  <label className="label" htmlFor={`round-${segment?.id ?? "new"}`}>
+                    Round
+                  </label>
+                  <input
+                    id={`round-${segment?.id ?? "new"}`}
+                    type="number"
+                    name="tournamentRound"
+                    min={1}
+                    defaultValue={segment?.tournamentRound ?? 1}
+                    className="field"
+                  />
+                  <p className="mt-1 text-xs text-ink-500">
+                    1 is the first round. The bracket names itself from how deep it goes.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           {titles.length > 0 && (
             <div className="rounded-lg border border-played-500/25 bg-played-500/5 p-3">

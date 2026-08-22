@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { formatDate, formatDuration } from "@/lib/dates";
 import { getTitleHistory } from "@/lib/derive";
 import { updateTitle, deleteTitle } from "@/lib/actions/companies";
+import { TITLE_HOLDER_OPTIONS, titleKind } from "@/lib/constants";
 import { BackLink, Empty, PageHeader } from "@/components/ui";
 import { PeekName } from "@/components/peek/peek-triggers";
 
@@ -16,7 +17,10 @@ export default async function TitlePage({ params }: PageProps<"/titles/[id]">) {
   return (
     <div className="mx-auto max-w-5xl">
       <BackLink href="/titles">Titles</BackLink>
-      <PageHeader title={title.name} subtitle={title.company.name} />
+      <PageHeader
+        title={title.name}
+        subtitle={`${title.company.name} · ${titleKind(title.holderCount)}`}
+      />
 
       <div className="card mb-4 border-played-500/30 bg-played-500/5 p-4">
         <p className="section-title">Current champion</p>
@@ -30,6 +34,12 @@ export default async function TitlePage({ params }: PageProps<"/titles/[id]">) {
                 </span>
               ))}
             </p>
+            {title.current.holders.length !== title.holderCount && (
+              <p className="mt-1 text-xs text-ink-500">
+                Held by {title.current.holders.length} — this is a{" "}
+                {titleKind(title.holderCount).toLowerCase()} belt. Recorded as it happened.
+              </p>
+            )}
             <p className="mt-1 text-sm text-ink-400">
               Since {formatDate(title.current.startedOn)} · {formatDuration(title.current.days)}
               {title.current.wonAtShow && (
@@ -120,6 +130,19 @@ export default async function TitlePage({ params }: PageProps<"/titles/[id]">) {
             <div>
               <label className="label" htmlFor="name">Name</label>
               <input id="name" name="name" required defaultValue={title.name} className="field" />
+            </div>
+            <div>
+              <label className="label" htmlFor="holderCount">Held by</label>
+              <select
+                id="holderCount"
+                name="holderCount"
+                defaultValue={String(title.holderCount)}
+                className="field"
+              >
+                {TITLE_HOLDER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
             </div>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="isActive" defaultChecked={title.isActive} className="size-4" />

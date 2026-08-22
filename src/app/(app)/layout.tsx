@@ -9,6 +9,7 @@ import {
   IconSettings,
   IconTitles,
   IconToday,
+  IconTournament,
   IconUnits,
 } from "@/components/icons";
 import { PeekProvider } from "@/components/peek/peek-provider";
@@ -22,6 +23,7 @@ const NAV = [
   { href: "/groups", label: "Units", Icon: IconUnits },
   { href: "/companies", label: "Companies", Icon: IconCompanies },
   { href: "/titles", label: "Titles", Icon: IconTitles },
+  { href: "/tournaments", label: "Tournaments", short: "Cups", Icon: IconTournament },
 ] as const;
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -104,15 +106,15 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
           {/* Thumb-reachable tabs. */}
           <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-800 bg-ink-900/95 pb-safe backdrop-blur lg:hidden">
-            <div className="grid grid-cols-6">
-              {NAV.map(({ href, label, Icon }) => (
+            <div className="grid grid-cols-7">
+              {NAV.map((item) => (
                 <NavLink
-                  key={href}
-                  href={href}
+                  key={item.href}
+                  href={item.href}
                   className="display flex flex-col items-center gap-1 border-t-2 border-transparent px-1 py-2.5 text-[10px] tracking-widest"
                 >
-                  <Icon className="size-5" />
-                  {label}
+                  <item.Icon className="size-5" />
+                  {"short" in item ? item.short : item.label}
                 </NavLink>
               ))}
             </div>

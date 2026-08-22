@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { CADENCE_LABELS } from "@/lib/constants";
+import { CADENCE_LABELS, TITLE_HOLDER_OPTIONS, titleKind } from "@/lib/constants";
 import { getCurrentChampions } from "@/lib/derive";
 import { createSeries, createTitle, deleteCompany, deleteSeries, updateCompany, updateSeries } from "@/lib/actions/companies";
 import { BackLink, Empty, PageHeader, StateChip } from "@/components/ui";
@@ -60,12 +60,15 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
               companyId={id}
               titles={company.titles.map((title) => {
                 const reign = champions.find((c) => c.title.id === title.id);
+                const kind = title.holderCount > 1 ? titleKind(title.holderCount) : null;
                 return {
                   id: title.id,
                   name: title.name,
                   isActive: title.isActive,
                   champion: reign ? reign.holders.map((h) => h.name).join(" & ") : null,
-                  detail: reign ? formatDuration(reign.days) : null,
+                  detail: [reign ? formatDuration(reign.days) : null, kind]
+                    .filter(Boolean)
+                    .join(" · ") || null,
                 };
               })}
             />
@@ -76,6 +79,11 @@ export default async function CompanyPage({ params }: PageProps<"/companies/[id]
             <form action={createTitle} className="mt-3 space-y-3">
               <input type="hidden" name="companyId" value={id} />
               <input name="name" required placeholder="Title name" className="field" />
+              <select name="holderCount" defaultValue="1" className="field">
+                {TITLE_HOLDER_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
               <button type="submit" className="btn-primary w-full">Add title</button>
             </form>
           </details>

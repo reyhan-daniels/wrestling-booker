@@ -33,11 +33,12 @@ model World {
   /// are left alone, so it is reversible.
   photosEnabled Boolean @default(true)
 
-  wrestlers Wrestler[]
-  companies Company[]
-  contracts Contract[]
-  shows     Show[]
-  groups    Group[]
+  wrestlers   Wrestler[]
+  companies   Company[]
+  contracts   Contract[]
+  shows       Show[]
+  groups      Group[]
+  tournaments Tournament[]
 }
 
 // ---------------------------------------------------------------------------
@@ -89,6 +90,7 @@ model Wrestler {
   appearances SegmentParticipant[]
   reigns      Reign[]              @relation("ReignHolders")
   groups      Group[]              @relation("GroupMembers")
+  tournaments TournamentEntrant[]
 
   @@index([worldId, name])
 }
@@ -115,7 +117,8 @@ model Group {
   /// Hand-sorted rather than alphabetical. Set by dragging.
   order Int @default(0)
 
-  members Wrestler[] @relation("GroupMembers")
+  members     Wrestler[]          @relation("GroupMembers")
+  tournaments TournamentEntrant[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -150,11 +153,12 @@ model Company {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  titles    Title[]
-  series    WeeklySeries[]
-  contracts Contract[]
+  titles      Title[]
+  series      WeeklySeries[]
+  contracts   Contract[]
+  tournaments Tournament[]
   /// A show may be co-promoted, so this is many-to-many in both directions.
-  shows     Show[]         @relation("ShowCompanies")
+  shows       Show[]         @relation("ShowCompanies")
 
   @@index([worldId, name])
 }
@@ -203,9 +207,15 @@ model Title {
   name      String
   /// Retired belts stay in the world; their lineage is still readable.
   isActive  Boolean @default(true)
-  notes     String?
+
+  /// 1 = singles, 2 = tag team, 3 = trios. A count rather than an enum, so a
+  /// belt for a four-person unit needs no new case — the same shape as a
+  /// unit's kind. Nothing enforces it at play time: a belt can be won short-
+  /// handed, and the tool records what happened rather than what should have.
+  holderCount Int     @default(1)
+  notes       String?
   /// Hand-sorted: world title first, then secondary, then tag. Set by dragging.
-  order     Int     @default(0)
+  order       Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -355,6 +365,15 @@ model Segment {
   /// Pick-list with a freeform escape hatch. Blank for a standard match.
   stipulation String?
 
+  // --- tournament placement -------------------------------------------------
+
+  tournamentId String?
+  tournament   Tournament? @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
+
+  /// Bracket depth for a single-elimination tournament: 1 is the first round.
+  /// Null in a league, where every match sits at the same level.
+  tournamentRound Int?
+
   /// How it *finished*. Written while playing, distinct from `note`.
   resultNote String?
 
@@ -364,6 +383,7 @@ model Segment {
   participants SegmentParticipant[]
 
   @@index([showId, order])
+  @@index([tournamentId])
 }
 
 /// The winner is the single most important input in the tool: it is what
@@ -381,4 +401,76 @@ model SegmentParticipant {
 
   @@unique([segmentId, wrestlerId])
   @@index([wrestlerId])
+}
+
+// ---------------------------------------------------------------------------
+// Tournaments — a league or a bracket, laid over ordinary matches
+// ---------------------------------------------------------------------------
+
+enum TournamentFormat {
+  /// Everyone in a block meets everyone else; points decide it.
+  ROUND_ROBIN
+  /// Lose and you are out.
+  SINGLE_ELIMINATION
+}
+
+/// A tournament stores who is in it and how it is scored, and nothing else.
+/// Standings, points, the bracket and who has advanced are all derived from
+/// the matches themselves — see src/lib/derive.ts. A tournament match is an
+/// ordinary segment that points back here, so it counts towards records and
+/// title reigns exactly like any other match.
+model Tournament {
+  id      String @id @default(cuid())
+  worldId String
+  world   World  @relation(fields: [worldId], references: [id], onDelete: Cascade)
+
+  /// Optional: a tournament can be co-promoted or belong to nobody.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  name   String
+  format TournamentFormat @default(ROUND_ROBIN)
+  color  String?
+  notes  String?
+
+  /// League scoring. Two for a win and one for a draw is the G1's ruleset,
+  /// and the default here; it is editable because not every league agrees.
+  pointsWin  Int @default(2)
+  pointsDraw Int @default(1)
+
+  startsOn DateTime? @db.Date
+  endsOn   DateTime? @db.Date
+
+  /// Marked finished by hand. Nothing concludes on its own, and a finished
+  /// tournament keeps its standings.
+  isComplete Boolean @default(false)
+
+  entrants TournamentEntrant[]
+  segments Segment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([worldId, name])
+}
+
+/// One place in the field: a wrestler or a unit, never both. Units are how a
+/// tag league works — the entrant is the team, and a team's match is one where
+/// every member is on the same side.
+model TournamentEntrant {
+  id           String     @id @default(cuid())
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  wrestlerId String?
+  wrestler   Wrestler? @relation(fields: [wrestlerId], references: [id], onDelete: Cascade)
+  groupId    String?
+  group      Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  /// "A", "B" … for a league split into blocks. Null means one single block.
+  block String?
+
+  order Int @default(0)
+
+  @@index([tournamentId])
 }

@@ -34,7 +34,7 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
   const world = await getActiveWorld();
   const companyIds = show.companies.map((c) => c.id);
 
-  const [roster, titles, allCompanies] = await Promise.all([
+  const [roster, titles, allCompanies, openTournaments] = await Promise.all([
     db.wrestler.findMany({
       where: { worldId: world.id },
       include: {
@@ -51,7 +51,19 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
       orderBy: [{ company: { name: "asc" } }, { name: "asc" }],
     }),
     db.company.findMany({ where: { worldId: world.id }, orderBy: { name: "asc" } }),
+    // A concluded tournament is no longer something you can book into.
+    db.tournament.findMany({
+      where: { worldId: world.id, isComplete: false },
+      select: { id: true, name: true, format: true },
+      orderBy: [{ startsOn: "desc" }, { name: "asc" }],
+    }),
   ]);
+
+  const pickableTournaments = openTournaments.map((tournament) => ({
+    id: tournament.id,
+    name: tournament.name,
+    isBracket: tournament.format === "SINGLE_ELIMINATION",
+  }));
 
   // Contracts govern display, not eligibility: the home roster sorts to the
   // top, but anybody in the world can be booked as a guest.
@@ -84,6 +96,8 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
     note: segment.note,
     isTitleMatch: segment.isTitleMatch,
     titleId: segment.titleId,
+    tournamentId: segment.tournamentId,
+    tournamentRound: segment.tournamentRound,
     titleName: segment.title?.name ?? null,
     stipulation: segment.stipulation,
     resultNote: segment.resultNote,
@@ -123,6 +137,7 @@ export default async function ShowPage({ params }: PageProps<"/shows/[id]">) {
         segments={segments}
         wrestlers={wrestlers}
         titles={pickableTitles}
+        tournaments={pickableTournaments}
       />
 
       {show.notes && (
