@@ -176,6 +176,12 @@ const ROSTER: Person[] = [
     gender: "MALE", companies: [AEW] },
   { name: "Trey Miguel", height: "5'9\"", weight: "172 lbs", align: "TWEENER",
     gender: "MALE", companies: [AEW] },
+  { name: "Orange Cassidy", nickname: "Freshly Squeezed", height: "5'10\"", weight: "161 lbs", align: "FACE",
+    gender: "MALE", companies: [AEW] },
+  { name: "Kofi Kingston", nickname: "The Dreadlocked Dynamo", height: "6'0\"", weight: "212 lbs", align: "FACE",
+    gender: "MALE", companies: [AEW] },
+  { name: "Austin Creed", height: "5'11\"", weight: "205 lbs", align: "FACE",
+    gender: "MALE", companies: [AEW] },
   // --- NJPW ------------------------------------------------------------------
   { name: "Kazuchika Okada", nickname: "The Rainmaker", height: "6'3\"", weight: "236 lbs", align: "HEEL",
     gender: "MALE", companies: [NJPW] },
@@ -288,6 +294,8 @@ const ROSTER: Person[] = [
   { name: "Trent Beretta", height: "6'0\"", weight: "215 lbs", align: "FACE",
     gender: "MALE", companies: [NJPW] },
   { name: "Rocky Romero", nickname: "Azucar", height: "5'8\"", weight: "176 lbs", align: "FACE",
+    gender: "MALE", companies: [NJPW] },
+  { name: "Sheamus", nickname: "The Celtic Warrior", height: "6'3\"", weight: "267 lbs", align: "HEEL",
     gender: "MALE", companies: [NJPW] },
   // --- Stardom ---------------------------------------------------------------
   { name: "Mercedes Moné", nickname: "The CEO", height: "5'5\"", weight: "114 lbs", align: "HEEL",
