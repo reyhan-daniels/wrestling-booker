@@ -479,7 +479,9 @@ export type Standing = Competitor & {
 
 type TournamentSegment = {
   id: string;
-  tournamentRound: number | null;
+  /** Position on the card, so two rounds can share one night. */
+  order: number;
+  isPlayoff: boolean;
   show: { id: string; name: string; date: Date; isFinalized: boolean };
   participants: { isWinner: boolean; wrestler: { id: string; name: string } }[];
 };
@@ -576,6 +578,44 @@ export function blocksFrom(standings: Standing[]): { block: string | null; stand
   return names.map((block) => ({ block, standings: standings.filter((s) => s.block === block) }));
 }
 
+/**
+ * Card order: by date, then by where it sat on the show. A one-night
+ * tournament is several rounds on the same date, and the card is what says
+ * which came first.
+ */
+function byCard(a: TournamentSegment, b: TournamentSegment): number {
+  return a.show.date.getTime() - b.show.date.getTime() || a.order - b.order;
+}
+
+/**
+ * Which round each match belongs to, counted rather than stored. Walking the
+ * card in order, a competitor's nth match is round n, and a match sits in the
+ * latest round any of its competitors has reached — which is what makes a bye
+ * work: sitting a round out does not push you back into it.
+ *
+ * Nothing is renumbered by hand, so inserting a forgotten first-round match
+ * moves everything after it, and a bracket booked out of order still reads
+ * correctly once the card does.
+ */
+export function roundsOf(
+  segments: TournamentSegment[],
+  competitors: Competitor[],
+): Map<string, number> {
+  const reached = new Map<string, number>();
+  const rounds = new Map<string, number>();
+
+  for (const segment of [...segments].sort(byCard)) {
+    const inMatch = competitors.filter((competitor) => outcomeFor(segment, competitor) !== null);
+    const round = 1 + Math.max(0, ...inMatch.map((c) => reached.get(c.entrantId) ?? 0));
+    rounds.set(segment.id, round);
+    // Levelled up to the round they just had, not incremented, so competitors
+    // who took different paths to the same round stay in step.
+    for (const competitor of inMatch) reached.set(competitor.entrantId, round);
+  }
+
+  return rounds;
+}
+
 export type BracketRound = {
   round: number;
   segments: TournamentSegment[];
@@ -595,14 +635,15 @@ export function bracketFrom(
   segments: TournamentSegment[],
   label: (round: number, total: number) => string,
 ): { rounds: BracketRound[]; advancing: Competitor[]; nextRound: number } {
-  const rounds = [...new Set(segments.map((s) => s.tournamentRound ?? 1))].sort((a, b) => a - b);
+  const roundOf = roundsOf(segments, competitors);
+  const rounds = [...new Set(segments.map((s) => roundOf.get(s.id) ?? 1))].sort((a, b) => a - b);
   // The size of the field says how many rounds it *should* take, so a final
   // can be called a final before the semi-finals have been booked.
   const expected = competitors.length > 1 ? Math.ceil(Math.log2(competitors.length)) : 1;
   const total = Math.max(expected, rounds.at(-1) ?? 1);
 
   const built = rounds.map((round) => {
-    const inRound = segments.filter((s) => (s.tournamentRound ?? 1) === round);
+    const inRound = segments.filter((s) => (roundOf.get(s.id) ?? 1) === round);
     const winners = competitors.filter((competitor) =>
       inRound.some((segment) => segment.show.isFinalized && outcomeFor(segment, competitor) === "win"),
     );
@@ -645,13 +686,14 @@ export const tournamentInclude = {
 } satisfies Prisma.TournamentInclude;
 
 /**
- * A league's matches split in two. Block matches carry no round; a playoff
- * match does, which lets the same bracket machinery read both formats.
+ * A league's matches split in two. A playoff match is flagged as one when it is
+ * booked — the one thing about it the tool cannot work out for itself — which
+ * lets the same bracket machinery read both formats.
  */
-export function splitLeague<T extends { tournamentRound: number | null }>(segments: T[]) {
+export function splitLeague<T extends { isPlayoff: boolean }>(segments: T[]) {
   return {
-    blockStage: segments.filter((s) => s.tournamentRound === null),
-    playoff: segments.filter((s) => s.tournamentRound !== null),
+    blockStage: segments.filter((s) => !s.isPlayoff),
+    playoff: segments.filter((s) => s.isPlayoff),
   };
 }
 
@@ -670,7 +712,7 @@ export type Qualification = {
  */
 export function qualifiersFrom(
   blocks: { block: string | null; standings: Standing[] }[],
-  segments: { tournamentRound: number | null; show: { isFinalized: boolean } }[],
+  segments: { isPlayoff: boolean; show: { isFinalized: boolean } }[],
   playoff: string,
 ): Qualification {
   const { blockStage } = splitLeague(segments);
@@ -715,7 +757,7 @@ export async function getTournamentHistory(memberIds: string[], worldId: string)
       },
     },
     include: tournamentInclude,
-    orderBy: [{ startsOn: "desc" }, { createdAt: "desc" }],
+    orderBy: { createdAt: "desc" },
   });
 
   return tournaments.map((tournament) => {
@@ -735,7 +777,9 @@ export async function getTournamentHistory(memberIds: string[], worldId: string)
       name: tournament.name,
       format: tournament.format,
       isComplete: tournament.isComplete,
-      startsOn: tournament.startsOn,
+      // When it ran is the first show one of its matches was on. There is no
+      // start date to keep in step with the booking.
+      startedOn: tournament.segments[0]?.show.date ?? null,
       block,
       as: mine?.name ?? null,
       isUnit: mine?.isUnit ?? false,

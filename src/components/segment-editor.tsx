@@ -14,7 +14,7 @@ export type EditableSegment = {
   isTitleMatch: boolean;
   titleId: string | null;
   tournamentId: string | null;
-  tournamentRound: number | null;
+  isPlayoff: boolean;
   stipulation: string | null;
   participantIds: string[];
 };
@@ -23,9 +23,9 @@ export type PickableTitle = { id: string; name: string; companyName: string };
 export type PickableTournament = {
   id: string;
   name: string;
-  /** A bracket, or a league with a playoff — either way, rounds mean something. */
-  usesRounds: boolean;
-  isLeague: boolean;
+  /** A league that ends in a playoff — the only case with two kinds of match. */
+  hasPlayoff: boolean;
+  isBracket: boolean;
 };
 
 function Submit({ label }: { label: string }) {
@@ -143,41 +143,29 @@ export function SegmentEditor({
                 ))}
               </select>
 
-              {/* The round is what makes a match a playoff match rather than a
-                  block match, so a league with a playoff needs it too. */}
-              {tournament?.usesRounds && (
-                <div className="mt-2">
-                  <label className="label" htmlFor={`round-${segment?.id ?? "new"}`}>
-                    {tournament.isLeague ? "Stage" : "Round"}
-                  </label>
-                  {tournament.isLeague ? (
-                    <select
-                      id={`round-${segment?.id ?? "new"}`}
-                      name="tournamentRound"
-                      defaultValue={String(segment?.tournamentRound ?? "")}
-                      className="field"
-                    >
-                      <option value="">Block match</option>
-                      {[1, 2, 3].map((round) => (
-                        <option key={round} value={round}>Playoff round {round}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      id={`round-${segment?.id ?? "new"}`}
-                      type="number"
-                      name="tournamentRound"
-                      min={1}
-                      defaultValue={segment?.tournamentRound ?? 1}
-                      className="field"
-                    />
-                  )}
-                  <p className="mt-1 text-xs text-ink-500">
-                    {tournament.isLeague
+              {/* Nothing is asked about the round: it is counted from the
+                  matches already booked. The one thing the tool cannot work
+                  out is whether a league match is a block match or the
+                  playoff. */}
+              {tournament?.hasPlayoff && (
+                <label className="mt-2 flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name="isPlayoff"
+                    defaultChecked={segment?.isPlayoff ?? false}
+                    className="size-4"
+                  />
+                  Playoff match
+                </label>
+              )}
+              {tournament && (
+                <p className="mt-2 text-xs text-ink-500">
+                  {tournament.isBracket
+                    ? "The round is counted from the matches already booked — first round, then whoever comes through it."
+                    : tournament.hasPlayoff
                       ? "A block match feeds the table. A playoff match does not."
-                      : "1 is the first round. The bracket names itself from how deep it goes."}
-                  </p>
-                </div>
+                      : "This feeds the league table."}
+                </p>
               )}
             </div>
           )}

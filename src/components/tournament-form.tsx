@@ -24,8 +24,6 @@ type Tournament = {
   pointsDraw: number;
   blockCount: number;
   playoff: string;
-  startsOn: string;
-  endsOn: string;
   isComplete: boolean;
   /** Same encoding as Contender.ref, with an optional "@block" suffix. */
   entrants: string[];
@@ -124,17 +122,6 @@ export function TournamentForm({
                 <option key={company.id} value={company.id}>{company.name}</option>
               ))}
             </select>
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label className="label" htmlFor="startsOn">Starts</label>
-            <input id="startsOn" type="date" name="startsOn" defaultValue={tournament?.startsOn} className="field" />
-          </div>
-          <div>
-            <label className="label" htmlFor="endsOn">Ends</label>
-            <input id="endsOn" type="date" name="endsOn" defaultValue={tournament?.endsOn} className="field" />
           </div>
         </div>
 

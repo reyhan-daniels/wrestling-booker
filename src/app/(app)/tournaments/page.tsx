@@ -14,8 +14,14 @@ export default async function TournamentsPage() {
     include: {
       company: { select: { name: true, abbreviation: true } },
       _count: { select: { entrants: true, segments: true } },
+      // When it ran is the first show it has a match on, not a date typed in.
+      segments: {
+        select: { show: { select: { date: true } } },
+        orderBy: { show: { date: "asc" } },
+        take: 1,
+      },
     },
-    orderBy: [{ isComplete: "asc" }, { startsOn: "desc" }, { createdAt: "desc" }],
+    orderBy: [{ isComplete: "asc" }, { createdAt: "desc" }],
   });
 
   const played = await db.segment.groupBy({
@@ -65,7 +71,9 @@ export default async function TournamentsPage() {
               <p className="mt-2 text-xs text-ink-500">
                 {tournament._count.entrants} entrant{tournament._count.entrants === 1 ? "" : "s"} ·{" "}
                 {playedBy.get(tournament.id) ?? 0} of {tournament._count.segments} matches played
-                {tournament.startsOn ? ` · from ${formatDate(tournament.startsOn)}` : ""}
+                {tournament.segments[0]
+                  ? ` · from ${formatDate(tournament.segments[0].show.date)}`
+                  : ""}
               </p>
             </li>
           ))}

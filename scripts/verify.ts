@@ -16,9 +16,9 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { applyTitleChanges } from "../src/lib/titles";
 import { getHeadToHead, getRecord, getTitleHistory, getCalendar, getUnitMatches, unitRecordFrom, tournamentInclude } from "../src/lib/derive";
-import { blocksFrom, bracketFrom, competitorsOf, qualifiersFrom, splitLeague, standingsFrom } from "../src/lib/derive";
+import { blocksFrom, bracketFrom, competitorsOf, qualifiersFrom, roundsOf, splitLeague, standingsFrom } from "../src/lib/derive";
 import { roundName, unitKind } from "../src/lib/constants";
-import { parseISODate } from "../src/lib/dates";
+import { parseISODate, toISODate } from "../src/lib/dates";
 
 const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
 
@@ -393,11 +393,11 @@ async function main() {
     });
 
     check("a playoff match never counts towards the block table", () => {
-      // Promote Night Five to a playoff match by giving it a round.
-      const withRound = loaded.segments.map((segment) =>
-        segment.show.name === "Night Five" ? { ...segment, tournamentRound: 1 } : segment,
+      // Promote Night Five to a playoff match by flagging it as one.
+      const flagged = loaded.segments.map((segment) =>
+        segment.show.name === "Night Five" ? { ...segment, isPlayoff: true } : segment,
       );
-      const { blockStage, playoff } = splitLeague(withRound);
+      const { blockStage, playoff } = splitLeague(flagged);
       assert.equal(playoff.length, 1);
       assert.equal(blockStage.length, 2);
 
@@ -413,11 +413,9 @@ async function main() {
       assert.equal(q.qualifiers.length, 0);
     });
 
-    // The same matches read as a bracket when the format says so.
+    // The same matches read as a bracket when the format says so — and no round
+    // is stored anywhere, so the bracket has to count them off the card.
     await db.tournament.update({ where: { id: league.id }, data: { format: "SINGLE_ELIMINATION" } });
-    await db.segment.updateMany({ where: { showId: showOne.id }, data: { tournamentRound: 1 } });
-    await db.segment.updateMany({ where: { showId: showThree.id }, data: { tournamentRound: 2 } });
-    await db.segment.updateMany({ where: { showId: pending.id }, data: { tournamentRound: 3 } });
 
     const asBracket = await db.tournament.findUniqueOrThrow({
       where: { id: league.id },
@@ -425,22 +423,77 @@ async function main() {
     });
     const bracket = bracketFrom(competitorsOf(asBracket), asBracket.segments, roundName);
 
-    check("a bracket is read off the rounds that were booked", () => {
-      assert.deepEqual(bracket.rounds.map((r) => r.round), [1, 2, 3]);
-      assert.equal(bracket.rounds[0].winners.map((w) => w.name).join(), "Ace");
-      assert.equal(bracket.rounds[1].winners.map((w) => w.name).join(), "Rival");
+    check("a bracket's rounds are counted off the card, not stored", () => {
+      assert.deepEqual(bracket.rounds.map((r) => r.round), [1, 2]);
+      // Ace and Rival met on Night One and again on Night Three, so the second
+      // meeting is their second round. Third and Fourth have not been in one
+      // before, so Night Five is still round 1 however late it is on the calendar.
+      assert.deepEqual(
+        bracket.rounds[0].segments.map((s) => s.show.name).sort(),
+        ["Night Five", "Night One"],
+      );
+      assert.deepEqual(bracket.rounds[1].segments.map((s) => s.show.name), ["Night Three"]);
     });
 
-    check("an unplayed round advances nobody", () => {
-      // Round 3 has a winner flagged but its show is not finalized.
-      assert.equal(bracket.rounds[2].isComplete, false);
-      assert.equal(bracket.rounds[2].winners.length, 0);
-      assert.equal(bracket.advancing.length, 0);
+    check("a booked round advances nobody until it is played", () => {
+      // Night Five has a winner flagged but its show is not finalized.
+      assert.equal(bracket.rounds[0].isComplete, false);
+      assert.deepEqual(bracket.rounds[0].winners.map((w) => w.name), ["Ace"]);
+    });
+
+    // Ace has had two rounds, Third one. Putting them together must read as
+    // round three, not round two: sitting a round out is a bye, not a demotion.
+    const later = await db.show.create({
+      data: {
+        worldId: world.id,
+        name: "Night Seven",
+        date: parseISODate("2026-05-24"),
+        segments: {
+          create: [
+            {
+              order: 1,
+              type: "MATCH",
+              tournamentId: league.id,
+              participants: {
+                create: [{ wrestlerId: ace.id, order: 0 }, { wrestlerId: third.id, order: 1 }],
+              },
+            },
+          ],
+        },
+      },
+      include: { segments: true },
+    });
+
+    const withBye = await db.tournament.findUniqueOrThrow({
+      where: { id: league.id },
+      include: tournamentInclude,
+    });
+    const byeRounds = roundsOf(withBye.segments, competitorsOf(withBye));
+
+    check("a bye does not push a competitor back a round", () => {
+      assert.equal(byeRounds.get(later.segments[0].id), 3);
+    });
+
+    check("inserting a match renumbers what comes after it", () => {
+      // The bracket is re-read, never re-stamped: Night Seven arriving does not
+      // touch the rounds the earlier matches are in.
+      assert.equal(
+        byeRounds.get(withBye.segments.find((s) => s.show.name === "Night Three")!.id),
+        2,
+      );
     });
 
     check("the last round is named the final, whatever its number", () => {
       assert.equal(roundName(3, 3), "Final");
       assert.equal(roundName(2, 3), "Semi-finals");
+    });
+
+    check("a tournament has no dates of its own", () => {
+      // When it ran is the shows its matches are on, so there is nothing to
+      // keep in step. The first is Night One; the last is Night Seven.
+      const dates = withBye.segments.map((s) => toISODate(s.show.date));
+      assert.equal(dates[0], "2026-01-10");
+      assert.equal(dates.at(-1), "2026-05-24");
     });
 
     // A show that was played is history and stays that way.

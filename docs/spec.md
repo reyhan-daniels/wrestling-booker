@@ -153,12 +153,21 @@ Fields:
   table; the matches are still yours to book.
 - **Concluded** — a flag, set by hand.
 
-A league match carries no round. A **playoff** match is the same league's match with a
-round number on it, which is what keeps a semi-final win out of the block table.
+A tournament has no dates of its own: it happens on the shows its matches are booked
+on, and when it ran is read off those shows.
 
-**Derived, never stored:** the standings, every entrant's record within the tournament,
-the points, the finishing order, who qualifies for the playoff, the bracket, the round
-names, and who has advanced. A wrestler's tournament history and their placing in each
+Booking a tournament match asks for one thing — which tournament — and, in a league
+that ends in a playoff, whether this is a **playoff** match rather than a block match.
+That flag is the only thing about a tournament match that cannot be worked out, and it
+is what keeps a semi-final win out of the block table.
+
+**Derived, never stored:** the round a match is in, the standings, every entrant's
+record within the tournament, the points, the finishing order, who qualifies for the
+playoff, the bracket, the round names, and who has advanced. Rounds are counted off the
+card: walking the matches in order, a competitor's nth match is round n, and a match
+sits in the latest round any of its competitors has reached — so a bye costs nobody a
+round, and a forgotten first-round match slotted in later renumbers everything after it
+rather than being renumbered by hand. A wrestler's tournament history and their placing in each
 are counted the same way, so correcting a result re-sorts every table it appears in.
 Only *played* shows count, so a booked fixture moves nobody up the table. Correcting a
 winner corrects the table, because there is no table to correct.

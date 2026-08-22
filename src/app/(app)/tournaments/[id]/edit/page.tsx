@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { toISODate } from "@/lib/dates";
 import { getActiveWorld } from "@/lib/world";
 import { deleteTournament, updateTournament } from "@/lib/actions/tournaments";
 import { TournamentForm } from "@/components/tournament-form";
@@ -36,8 +35,6 @@ export default async function EditTournamentPage({ params }: PageProps<"/tournam
         companies={companies}
         tournament={{
           ...tournament,
-          startsOn: tournament.startsOn ? toISODate(tournament.startsOn) : "",
-          endsOn: tournament.endsOn ? toISODate(tournament.endsOn) : "",
           entrants: tournament.entrants.map((entrant) => {
             const ref = entrant.wrestlerId ? `w:${entrant.wrestlerId}` : `g:${entrant.groupId}`;
             return entrant.block ? `${ref}@${entrant.block}` : ref;

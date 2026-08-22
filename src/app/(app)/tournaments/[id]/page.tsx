@@ -26,8 +26,8 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
 
   const isLeague = tournament.format === "ROUND_ROBIN";
 
-  // In a league, a match with a round on it is a playoff match. Keeping the two
-  // apart is what stops a semi-final win inflating the block table.
+  // In a league, a match flagged as a playoff match is kept out of the table —
+  // that is what stops a semi-final win inflating the blocks.
   const { blockStage, playoff: playoffSegments } = splitLeague(segments);
   const counted = isLeague ? blockStage : segments;
 
@@ -40,9 +40,10 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
     roundName,
   );
 
-  // Where a new tournament match would be booked from. Nothing is created here
-  // — this is a link to the booking screen, not a shortcut past it.
-  const bookHref = `/shows/new?date=${toISODate(tournament.startsOn ?? new Date())}${
+  // Where a new tournament match would be booked from — dated after the last
+  // match it had, since that is where the next round goes. Nothing is created
+  // here: this is a link to the booking screen, not a shortcut past it.
+  const bookHref = `/shows/new?date=${toISODate(segments.at(-1)?.show.date ?? new Date())}${
     tournament.companyId ? `&company=${tournament.companyId}` : ""
   }`;
 
@@ -99,7 +100,7 @@ export default async function TournamentPage({ params }: PageProps<"/tournaments
                   </p>
                   <p className="mt-2 text-xs text-ink-500">
                     {qualification.blocksFinished
-                      ? "Blocks are done — book the playoff as a tournament match with a round number."
+                      ? "Blocks are done — book the playoff on a show and tick Playoff match."
                       : "As the table stands. Block matches are still to be played."}
                   </p>
                 </>

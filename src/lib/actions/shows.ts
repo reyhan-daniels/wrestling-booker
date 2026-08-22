@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { SegmentType } from "@/generated/prisma/enums";
-import { bool, integer, list, requiredDate, requiredText, text } from "@/lib/form";
+import { bool, list, requiredDate, requiredText, text } from "@/lib/form";
 import { parseISODate } from "@/lib/dates";
 import { episodeNumberFor } from "@/lib/derive";
 import { getActiveWorld } from "@/lib/world";
@@ -124,30 +124,28 @@ function segmentTypeOf(data: FormData): SegmentType {
  * they only exist in Play.
  */
 /**
- * A tournament match is an ordinary match that points at a tournament.
+ * A tournament match is an ordinary match that points at a tournament. Which
+ * round it is in is never asked for — it is counted from the matches already
+ * on the card.
  *
- * The round is what separates a playoff match from a block match, so it is
- * only meaningful where the tournament actually has rounds: a bracket, or a
- * league that ends in a playoff. A league decided by its table can never carry
- * one — and that is checked against the tournament rather than trusted from
- * the form, so a stale round cannot creep in.
+ * The one thing the tool cannot work out is whether a league match is a block
+ * match or the playoff, so that single flag is kept. It is only meaningful in
+ * a league that ends in a playoff: a bracket is all bracket, and a league
+ * decided by its table has no playoff to be in. Checked against the tournament
+ * rather than trusted from the form, so a stale flag cannot creep in.
  */
 async function tournamentPlacement(data: FormData, isMatch: boolean) {
   const tournamentId = isMatch ? text(data, "tournamentId") : null;
-  if (!tournamentId) return { tournamentId: null, tournamentRound: null };
+  if (!tournamentId) return { tournamentId: null, isPlayoff: false };
 
   const tournament = await db.tournament.findUnique({
     where: { id: tournamentId },
     select: { format: true, playoff: true },
   });
-  if (!tournament) return { tournamentId: null, tournamentRound: null };
+  if (!tournament) return { tournamentId: null, isPlayoff: false };
 
-  const round = integer(data, "tournamentRound");
-  const hasRounds = tournament.format === "SINGLE_ELIMINATION" || tournament.playoff !== "NONE";
-  return {
-    tournamentId,
-    tournamentRound: hasRounds && round && round > 0 ? round : null,
-  };
+  const hasPlayoff = tournament.format === "ROUND_ROBIN" && tournament.playoff !== "NONE";
+  return { tournamentId, isPlayoff: hasPlayoff && bool(data, "isPlayoff") };
 }
 
 export async function addSegment(data: FormData) {

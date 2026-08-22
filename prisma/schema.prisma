@@ -370,9 +370,11 @@ model Segment {
   tournamentId String?
   tournament   Tournament? @relation(fields: [tournamentId], references: [id], onDelete: SetNull)
 
-  /// Bracket depth for a single-elimination tournament: 1 is the first round.
-  /// Null in a league, where every match sits at the same level.
-  tournamentRound Int?
+  /// A league's playoff match rather than a block match: a semi-final win must
+  /// not inflate the block table. The round *number* is never stored — it is
+  /// counted from the matches already booked (see `roundsOf`), so a bracket
+  /// renumbers itself as it is filled in and a bye costs nobody a round.
+  isPlayoff Boolean @default(false)
 
   /// How it *finished*. Written while playing, distinct from `note`.
   resultNote String?
@@ -460,8 +462,8 @@ model Tournament {
   /// of the table; the matches themselves are still yours to book.
   playoff PlayoffFormat @default(NONE)
 
-  startsOn DateTime? @db.Date
-  endsOn   DateTime? @db.Date
+  /// No dates: a tournament happens on the shows its matches are booked on,
+  /// so when it ran is read off those shows rather than typed in twice.
 
   /// Marked finished by hand. Nothing concludes on its own, and a finished
   /// tournament keeps its standings.
